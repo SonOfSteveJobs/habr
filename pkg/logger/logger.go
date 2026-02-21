@@ -3,6 +3,8 @@ package logger
 import (
 	"context"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -21,15 +23,26 @@ func Init(level string, asJSON bool) {
 		lvl = zerolog.InfoLevel
 	}
 
+	zerolog.TimestampFieldName = "timestamp"
+	zerolog.LevelFieldName = "level"
+	zerolog.MessageFieldName = "message"
+	zerolog.CallerFieldName = "caller"
+	zerolog.ErrorStackFieldName = "stacktrace"
+	zerolog.TimeFieldFormat = time.RFC3339
+
+	zerolog.LevelFieldMarshalFunc = func(l zerolog.Level) string {
+		return strings.ToUpper(l.String())
+	}
+
 	output := os.Stdout
 
 	if asJSON {
 		log = zerolog.New(output)
 	} else {
-		log = zerolog.New(zerolog.ConsoleWriter{Out: output})
+		log = zerolog.New(zerolog.ConsoleWriter{Out: output, TimeFormat: time.RFC3339})
 	}
 
-	log = log.Level(lvl).With().Timestamp().Logger()
+	log = log.Level(lvl).With().Timestamp().Caller().Logger()
 }
 
 func Logger() zerolog.Logger {

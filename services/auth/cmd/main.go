@@ -1,15 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
-	"os"
-	"os/signal"
 	"syscall"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
+	"github.com/SonOfSteveJobs/habr/pkg/closer"
 	authv1 "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/config"
@@ -26,28 +26,28 @@ func main() {
 	logger.Init(cfg.Logger().Level(), cfg.Logger().AsJson())
 	log := logger.Logger()
 
+	closer.Listen(syscall.SIGINT, syscall.SIGTERM)
+
 	handler := authgrpc.New()
 
 	grpcServer := grpc.NewServer()
 	authv1.RegisterAuthServiceServer(grpcServer, handler)
 	reflection.Register(grpcServer)
+	closer.AddNamed("gRPC server", func(_ context.Context) error {
+		grpcServer.GracefulStop()
+		return nil
+	})
 
 	listener, err := net.Listen("tcp", cfg.GRPCPort())
 	if err != nil {
 		log.Fatal().Err(err).Str("port", cfg.GRPCPort()).Msg("failed to listen")
 	}
 
-	go func() {
-		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-		sig := <-quit
-		log.Info().Str("signal", sig.String()).Msg("shutting down")
-		grpcServer.GracefulStop()
-	}()
-
 	log.Info().Str("port", cfg.GRPCPort()).Msg("starting gRPC server")
 
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatal().Err(err).Msg("gRPC server failed")
 	}
+
+	closer.Wait()
 }
