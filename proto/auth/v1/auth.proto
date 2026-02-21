@@ -4,49 +4,65 @@ package auth.v1;
 
 option go_package = "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1;authv1";
 
+// AuthService - API для работы с учетными данными
 service AuthService {
+  // Register - создание нового пользователя
   rpc Register(RegisterRequest) returns (RegisterResponse);
+  // Login - аутентификация пользователя
   rpc Login(LoginRequest) returns (LoginResponse);
+  // RefreshToken - обновление access токена
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  // VerifyEmail - подтверждение email
   rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+  // Logout - выход из системы
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
 }
 
-// --- Register ---
-
 message RegisterRequest {
+  // email - email пользователя
   string email = 1;
+  // password - пароль пользователя
   string password = 2;
 }
 
 message RegisterResponse {}
 
-// --- Login ---
-
 message LoginRequest {
+  // email - email пользователя
   string email = 1;
+  // password - пароль пользователя
   string password = 2;
 }
 
 message LoginResponse {
+  // access_token - access токен пользователя, живет 10 минут
   string access_token = 1;
+  // refresh_token - refresh токен пользователя, живет 30 дней
   string refresh_token = 2;
 }
 
-// --- Refresh ---
-
 message RefreshTokenRequest {
+  // refresh_token - refresh токен пользователя
   string refresh_token = 1;
 }
 
 message RefreshTokenResponse {
+  // access_token - access токен пользователя, живет 10 минут
   string access_token = 1;
+  // refresh_token - refresh токен пользователя, живет 30 дней
   string refresh_token = 2;
 }
 
-// --- VerifyEmail ---
-
 message VerifyEmailRequest {
+  // token - токен подтверждения email из письма
   string token = 1;
 }
 
 message VerifyEmailResponse {}
+
+message LogoutRequest {
+  //user_id - uuid идентификатор пользователя
+  string user_id = 1;
+}
+
+message LogoutResponse {}

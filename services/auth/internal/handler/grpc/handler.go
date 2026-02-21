@@ -32,3 +32,7 @@ func (h *Handler) RefreshToken(_ context.Context, _ *authv1.RefreshTokenRequest)
 func (h *Handler) VerifyEmail(_ context.Context, _ *authv1.VerifyEmailRequest) (*authv1.VerifyEmailResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
+
+func (h *Handler) Logout(_ context.Context, _ *authv1.LogoutRequest) (*authv1.LogoutResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
