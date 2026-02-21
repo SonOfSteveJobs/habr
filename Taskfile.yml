@@ -56,6 +56,18 @@ tasks:
         cmds:
             - "{{.GOLANGCI_LINT}} run ./... --config=.golangci.yml"
 
+    proto-generate:
+        desc: "Генерирует Go-код из proto-файлов"
+        dir: proto
+        cmds:
+            - buf generate
+
+    proto-lint:
+        desc: "Линтит proto-файлы"
+        dir: proto
+        cmds:
+            - buf lint
+
     test:
         desc: "Запускает unit-тесты"
         cmds:
