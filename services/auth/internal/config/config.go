@@ -17,6 +17,10 @@ func (c *config) GRPCPort() string {
 	return c.grpcPort
 }
 
+func (c *config) Logger() LoggerConfig {
+	return c.logger
+}
+
 func Load(path ...string) error {
 	err := godotenv.Load(path...)
 	if err != nil && !os.IsNotExist(err) {

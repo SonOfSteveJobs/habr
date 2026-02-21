@@ -10,7 +10,6 @@ type loggerEnvConfig struct {
 }
 
 type loggerConfig struct {
-	// приватное поле для изоляции, чтобы из кода случайно не изменить, например, Level
 	logger loggerEnvConfig
 }
 
