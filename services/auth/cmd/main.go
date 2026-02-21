@@ -18,10 +18,11 @@ import (
 func main() {
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
 
-	cfg, err := config.New()
-	if err != nil {
+	if err := config.Load(); err != nil {
 		logger.Fatal().Err(err).Msg("failed to load config")
 	}
+
+	cfg := config.AppConfig()
 
 	handler := authgrpc.New()
 
@@ -29,9 +30,9 @@ func main() {
 	authv1.RegisterAuthServiceServer(grpcServer, handler)
 	reflection.Register(grpcServer)
 
-	listener, err := net.Listen("tcp", cfg.GRPCPort)
+	listener, err := net.Listen("tcp", cfg.GRPCPort())
 	if err != nil {
-		logger.Fatal().Err(err).Str("port", cfg.GRPCPort).Msg("failed to listen")
+		logger.Fatal().Err(err).Str("port", cfg.GRPCPort()).Msg("failed to listen")
 	}
 
 	go func() {
@@ -42,7 +43,7 @@ func main() {
 		grpcServer.GracefulStop()
 	}()
 
-	logger.Info().Str("port", cfg.GRPCPort).Msg("starting gRPC server")
+	logger.Info().Str("port", cfg.GRPCPort()).Msg("starting gRPC server")
 
 	if err := grpcServer.Serve(listener); err != nil {
 		logger.Fatal().Err(err).Msg("gRPC server failed")

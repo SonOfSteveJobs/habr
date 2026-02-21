@@ -1,28 +1,46 @@
 package config
 
 import (
-	"errors"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
-type Config struct {
-	GRPCPort string
+var appConfig *config
+
+type config struct {
+	grpcPort string
+	logger   LoggerConfig
 }
 
-func New() (*Config, error) {
-	err := godotenv.Load()
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return nil, err
+func (c *config) GRPCPort() string {
+	return c.grpcPort
+}
+
+func Load(path ...string) error {
+	err := godotenv.Load(path...)
+	if err != nil && !os.IsNotExist(err) {
+		return err
 	}
 
-	grpcPort := os.Getenv("GRPC_PORT")
+	logger, err := NewLoggerConfig()
+	if err != nil {
+		return err
+	}
+
+	grpcPort := os.Getenv("AUTH_GRPC_PORT")
 	if grpcPort == "" {
-		return nil, errors.New("GRPC_PORT is not provided")
+		return ErrGRPCPortNotProvided
 	}
 
-	return &Config{
-		GRPCPort: grpcPort,
-	}, nil
+	appConfig = &config{
+		grpcPort: grpcPort,
+		logger:   logger,
+	}
+
+	return nil
+}
+
+func AppConfig() *config {
+	return appConfig
 }
