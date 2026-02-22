@@ -12,8 +12,7 @@ import (
 const refreshTokenBytes = 32
 
 type TokenPair struct {
-	AccessToken string
-
+	AccessToken  string
 	RefreshToken string
 }
 
@@ -36,7 +35,7 @@ func NewTokenPair(userID uuid.UUID, secret string, accessTTL time.Duration) (*To
 		return nil, err
 	}
 
-	refreshToken := base64.URLEncoding.EncodeToString(refreshBytes)
+	refreshToken := base64.RawURLEncoding.EncodeToString(refreshBytes)
 
 	return &TokenPair{
 		AccessToken:  accessToken,

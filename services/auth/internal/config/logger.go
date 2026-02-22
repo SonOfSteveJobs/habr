@@ -1,31 +1,38 @@
 package config
 
 import (
-	"github.com/caarlos0/env/v11"
+	"os"
+	"strconv"
 )
 
-type loggerEnvConfig struct {
-	Level  string `env:"LOGGER_LEVEL,required"`
-	AsJson bool   `env:"LOGGER_AS_JSON,required"`
-}
-
 type loggerConfig struct {
-	logger loggerEnvConfig
+	level  string
+	asJson bool
 }
 
 func NewLoggerConfig() (*loggerConfig, error) {
-	var raw loggerEnvConfig
-	if err := env.Parse(&raw); err != nil {
-		return nil, err
+	level := os.Getenv("LOGGER_LEVEL")
+	if level == "" {
+		return nil, ErrLoggerLevelNotProvided
 	}
 
-	return &loggerConfig{logger: raw}, nil
+	asJsonStr := os.Getenv("LOGGER_AS_JSON")
+	if asJsonStr == "" {
+		return nil, ErrLoggerAsJsonNotProvided
+	}
+
+	asJson, err := strconv.ParseBool(asJsonStr)
+	if err != nil {
+		return nil, ErrLoggerAsJsonInvalid
+	}
+
+	return &loggerConfig{level: level, asJson: asJson}, nil
 }
 
 func (cfg *loggerConfig) Level() string {
-	return cfg.logger.Level
+	return cfg.level
 }
 
 func (cfg *loggerConfig) AsJson() bool {
-	return cfg.logger.AsJson
+	return cfg.asJson
 }

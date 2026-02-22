@@ -9,7 +9,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const bcryptCost = bcrypt.DefaultCost
+const (
+	bcryptCost     = bcrypt.DefaultCost
+	passwordMinLen = 1
+	passwordMaxLen = 20
+)
 
 type User struct {
 	ID               uuid.UUID
@@ -46,6 +50,10 @@ func NewUser(email, password string) (*User, error) {
 }
 
 func validatePassword(password string) error {
+	if len(password) < passwordMinLen || len(password) > passwordMaxLen {
+		return ErrInvalidPasswordSize
+	}
+
 	for _, r := range password {
 		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
 			return ErrInvalidPassword

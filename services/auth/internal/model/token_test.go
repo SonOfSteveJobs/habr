@@ -28,7 +28,7 @@ func TestNewTokenPair_Success(t *testing.T) {
 	}
 
 	// refresh token should be valid base64url
-	decoded, err := base64.URLEncoding.DecodeString(pair.RefreshToken)
+	decoded, err := base64.RawURLEncoding.DecodeString(pair.RefreshToken)
 	if err != nil {
 		t.Fatalf("RefreshToken is not valid base64url: %v", err)
 	}

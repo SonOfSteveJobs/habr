@@ -75,9 +75,10 @@ func main() {
 
 	log.Info().Str("port", cfg.GRPCPort()).Msg("starting gRPC server")
 
-	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatal().Err(err).Msg("gRPC server failed")
-	}
-
+	go func() {
+		if err := grpcServer.Serve(listener); err != nil {
+			log.Error().Err(err).Msg("gRPC server failed")
+		}
+	}()
 	closer.Wait()
 }
