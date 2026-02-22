@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/config"
 	authgrpc "github.com/SonOfSteveJobs/habr/services/auth/internal/handler/grpc"
+	tokenrepo "github.com/SonOfSteveJobs/habr/services/auth/internal/repository/token"
 	userrepo "github.com/SonOfSteveJobs/habr/services/auth/internal/repository/user"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/service"
 )
@@ -41,8 +43,19 @@ func main() {
 		return nil
 	})
 
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: cfg.RedisAddr(),
+	})
+	if err := redisClient.Ping(context.Background()).Err(); err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to redis")
+	}
+	closer.AddNamed("redis", func(_ context.Context) error {
+		return redisClient.Close()
+	})
+
 	userRepo := userrepo.New(pool)
-	authService := service.New(userRepo)
+	tokenRepo := tokenrepo.New(redisClient)
+	authService := service.New(userRepo, tokenRepo, cfg.JWTSecret(), cfg.AccessTokenTTL(), cfg.RefreshTokenTTL())
 	handler := authgrpc.New(authService)
 
 	grpcServer := grpc.NewServer(

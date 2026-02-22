@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -10,14 +12,35 @@ import (
 
 type UserRepository interface {
 	Create(ctx context.Context, user *model.User) error
+	GetByEmail(ctx context.Context, email string) (*model.User, error)
+}
+
+type TokenRepository interface {
+	Save(ctx context.Context, refreshToken string, userID uuid.UUID, ttl time.Duration) error
 }
 
 type Service struct {
-	userRepo UserRepository
+	userRepo   UserRepository
+	tokenRepo  TokenRepository
+	jwtSecret  string
+	accessTTL  time.Duration
+	refreshTTL time.Duration
 }
 
-func New(userRepo UserRepository) *Service {
-	return &Service{userRepo: userRepo}
+func New(
+	userRepo UserRepository,
+	tokenRepo TokenRepository,
+	jwtSecret string,
+	accessTTL time.Duration,
+	refreshTTL time.Duration,
+) *Service {
+	return &Service{
+		userRepo:   userRepo,
+		tokenRepo:  tokenRepo,
+		jwtSecret:  jwtSecret,
+		accessTTL:  accessTTL,
+		refreshTTL: refreshTTL,
+	}
 }
 
 func (s *Service) Register(ctx context.Context, email, password string) (uuid.UUID, error) {
@@ -31,4 +54,30 @@ func (s *Service) Register(ctx context.Context, email, password string) (uuid.UU
 	}
 
 	return user.ID, nil
+}
+
+func (s *Service) Login(ctx context.Context, email, password string) (*model.TokenPair, error) {
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, model.ErrUserNotFound) {
+			return nil, model.ErrInvalidCredentials
+		}
+
+		return nil, err
+	}
+
+	if err := user.VerifyPassword(password); err != nil {
+		return nil, err
+	}
+
+	pair, err := model.NewTokenPair(user.ID, s.jwtSecret, s.accessTTL)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.tokenRepo.Save(ctx, pair.RefreshToken, user.ID, s.refreshTTL); err != nil {
+		return nil, err
+	}
+
+	return pair, nil
 }
