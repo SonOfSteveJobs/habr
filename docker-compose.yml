@@ -1,6 +1,4 @@
 services:
-    # ============ Infrastructure ============
-
     postgres-auth:
         image: postgres:17
         container_name: auth-postgres
@@ -78,7 +76,13 @@ services:
         volumes:
             - kafka-data:/var/lib/kafka/data
         healthcheck:
-            test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:${KAFKA_INTERNAL_PORT}"]
+            test:
+                [
+                    "CMD",
+                    "kafka-broker-api-versions",
+                    "--bootstrap-server",
+                    "localhost:${KAFKA_INTERNAL_PORT}",
+                ]
             interval: 15s
             timeout: 10s
             retries: 10
@@ -119,15 +123,16 @@ services:
         networks:
             - habr-network
 
-    # ============ Services ============
-
     auth:
         build:
             context: .
             dockerfile: services/auth/Dockerfile
         container_name: habr-auth
         environment:
-            AUTH_GRPC_PORT: ":50051"
+            AUTH_GRPC_PORT: ":${AUTH_GRPC_PORT}"
+            DB_URI: "postgres://${AUTH_DB_USER}:${AUTH_DB_PASSWORD}@postgres-auth:5432/auth?sslmode=disable"
+            REDIS_ADDR: "redis:${REDIS_PORT}"
+            KAFKA_BROKERS: "kafka:${KAFKA_INTERNAL_PORT}"
             LOGGER_LEVEL: ${LOGGER_LEVEL}
             LOGGER_AS_JSON: ${LOGGER_AS_JSON}
         depends_on:
@@ -147,6 +152,9 @@ services:
             dockerfile: services/article/Dockerfile
         container_name: habr-article
         environment:
+            ARTICLE_GRPC_PORT: ":${ARTICLE_GRPC_PORT}"
+            DB_URI: "postgres://${ARTICLE_DB_USER}:${ARTICLE_DB_PASSWORD}@postgres-article:5432/article?sslmode=disable"
+            REDIS_ADDR: "redis:${REDIS_PORT}"
             LOGGER_LEVEL: ${LOGGER_LEVEL}
             LOGGER_AS_JSON: ${LOGGER_AS_JSON}
         depends_on:
@@ -164,8 +172,11 @@ services:
             dockerfile: services/gateway/Dockerfile
         container_name: habr-gateway
         ports:
-            - "${GATEWAY_PORT}:8080"
+            - "${GATEWAY_PORT}:${GATEWAY_PORT}"
         environment:
+            GATEWAY_HTTP_PORT: ":${GATEWAY_PORT}"
+            AUTH_GRPC_ADDR: "auth:${AUTH_GRPC_PORT}"
+            ARTICLE_GRPC_ADDR: "article:${ARTICLE_GRPC_PORT}"
             LOGGER_LEVEL: ${LOGGER_LEVEL}
             LOGGER_AS_JSON: ${LOGGER_AS_JSON}
         depends_on:
@@ -181,6 +192,7 @@ services:
             dockerfile: services/notification/Dockerfile
         container_name: habr-notification
         environment:
+            KAFKA_BROKERS: "kafka:${KAFKA_INTERNAL_PORT}"
             LOGGER_LEVEL: ${LOGGER_LEVEL}
             LOGGER_AS_JSON: ${LOGGER_AS_JSON}
         depends_on:
