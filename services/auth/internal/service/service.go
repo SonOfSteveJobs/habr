@@ -17,6 +17,8 @@ type UserRepository interface {
 
 type TokenRepository interface {
 	Save(ctx context.Context, refreshToken string, userID uuid.UUID, ttl time.Duration) error
+	Validate(ctx context.Context, refreshToken string, userID uuid.UUID) error
+	Delete(ctx context.Context, userID uuid.UUID) error
 }
 
 type Service struct {
@@ -76,6 +78,27 @@ func (s *Service) Login(ctx context.Context, email, password string) (*model.Tok
 	}
 
 	if err := s.tokenRepo.Save(ctx, pair.RefreshToken, user.ID, s.refreshTTL); err != nil {
+		return nil, err
+	}
+
+	return pair, nil
+}
+
+func (s *Service) RefreshToken(ctx context.Context, userID uuid.UUID, oldRefreshToken string) (*model.TokenPair, error) {
+	if err := s.tokenRepo.Validate(ctx, oldRefreshToken, userID); err != nil {
+		return nil, err
+	}
+
+	if err := s.tokenRepo.Delete(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	pair, err := model.NewTokenPair(userID, s.jwtSecret, s.accessTTL)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.tokenRepo.Save(ctx, pair.RefreshToken, userID, s.refreshTTL); err != nil {
 		return nil, err
 	}
 

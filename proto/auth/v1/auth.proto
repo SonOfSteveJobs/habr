@@ -44,8 +44,10 @@ message LoginResponse {
 }
 
 message RefreshTokenRequest {
+  // user_id - uuid идентификатор пользователя
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
   // refresh_token - refresh токен пользователя
-  string refresh_token = 1 [(buf.validate.field).string.min_len = 1];
+  string refresh_token = 2 [(buf.validate.field).string.min_len = 1];
 }
 
 message RefreshTokenResponse {

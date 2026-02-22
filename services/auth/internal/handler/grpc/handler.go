@@ -16,6 +16,7 @@ import (
 type AuthService interface {
 	Register(ctx context.Context, email, password string) (uuid.UUID, error)
 	Login(ctx context.Context, email, password string) (*model.TokenPair, error)
+	RefreshToken(ctx context.Context, userID uuid.UUID, refreshToken string) (*model.TokenPair, error)
 }
 
 type Handler struct {
@@ -48,8 +49,21 @@ func (h *Handler) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.
 	}, nil
 }
 
-func (h *Handler) RefreshToken(_ context.Context, _ *authv1.RefreshTokenRequest) (*authv1.RefreshTokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
+func (h *Handler) RefreshToken(ctx context.Context, req *authv1.RefreshTokenRequest) (*authv1.RefreshTokenResponse, error) {
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id")
+	}
+
+	pair, err := h.authService.RefreshToken(ctx, userID, req.GetRefreshToken())
+	if err != nil {
+		return nil, refreshTokenError(ctx, err)
+	}
+
+	return &authv1.RefreshTokenResponse{
+		AccessToken:  pair.AccessToken,
+		RefreshToken: pair.RefreshToken,
+	}, nil
 }
 
 func (h *Handler) VerifyEmail(_ context.Context, _ *authv1.VerifyEmailRequest) (*authv1.VerifyEmailResponse, error) {
@@ -71,6 +85,18 @@ func registerError(ctx context.Context, err error) error {
 	default:
 		log := logger.Ctx(ctx)
 		log.Error().Err(err).Msg("register: internal error")
+
+		return status.Error(codes.Internal, "internal error")
+	}
+}
+
+func refreshTokenError(ctx context.Context, err error) error {
+	switch {
+	case errors.Is(err, model.ErrInvalidRefreshToken):
+		return status.Error(codes.Unauthenticated, "invalid refresh token")
+	default:
+		log := logger.Ctx(ctx)
+		log.Error().Err(err).Msg("refresh token: internal error")
 
 		return status.Error(codes.Internal, "internal error")
 	}
