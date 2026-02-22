@@ -6,18 +6,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var appConfig *config
+var appConfig *Config
 
-type config struct {
+type Config struct {
 	grpcPort string
 	logger   LoggerConfig
 }
 
-func (c *config) GRPCPort() string {
-	return c.grpcPort
-}
+func (c *Config) GRPCPort() string { return c.grpcPort }
 
-func (c *config) Logger() LoggerConfig {
+func (c *Config) Logger() LoggerConfig {
 	return c.logger
 }
 
@@ -37,7 +35,7 @@ func Load(path ...string) error {
 		return ErrGRPCPortNotProvided
 	}
 
-	appConfig = &config{
+	appConfig = &Config{
 		grpcPort: grpcPort,
 		logger:   logger,
 	}
@@ -45,6 +43,4 @@ func Load(path ...string) error {
 	return nil
 }
 
-func AppConfig() *config {
-	return appConfig
-}
+func AppConfig() *Config { return appConfig }
