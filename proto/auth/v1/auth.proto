@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package auth.v1;
 
+import "buf/validate/validate.proto";
+
 option go_package = "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1;authv1";
 
 // AuthService - API для работы с учетными данными
@@ -20,18 +22,18 @@ service AuthService {
 
 message RegisterRequest {
   // email - email пользователя
-  string email = 1;
+  string email = 1 [(buf.validate.field).string.email = true];
   // password - пароль пользователя
-  string password = 2;
+  string password = 2 [(buf.validate.field).string.min_len = 1];
 }
 
 message RegisterResponse {}
 
 message LoginRequest {
   // email - email пользователя
-  string email = 1;
+  string email = 1 [(buf.validate.field).string.email = true];
   // password - пароль пользователя
-  string password = 2;
+  string password = 2 [(buf.validate.field).string.min_len = 1];
 }
 
 message LoginResponse {
@@ -43,7 +45,7 @@ message LoginResponse {
 
 message RefreshTokenRequest {
   // refresh_token - refresh токен пользователя
-  string refresh_token = 1;
+  string refresh_token = 1 [(buf.validate.field).string.min_len = 1];
 }
 
 message RefreshTokenResponse {
@@ -55,14 +57,14 @@ message RefreshTokenResponse {
 
 message VerifyEmailRequest {
   // token - токен подтверждения email из письма
-  string token = 1;
+  string token = 1 [(buf.validate.field).string.min_len = 1];
 }
 
 message VerifyEmailResponse {}
 
 message LogoutRequest {
   //user_id - uuid идентификатор пользователя
-  string user_id = 1;
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
 }
 
 message LogoutResponse {}
