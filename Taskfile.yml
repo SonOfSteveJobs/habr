@@ -88,6 +88,26 @@ tasks:
         cmds:
             - go test ./services/... ./pkg/... -v
 
+    docker-up:
+        desc: "Поднимает все сервисы и инфраструктуру"
+        cmds:
+            - docker compose up --build
+
+    docker-up-infra:
+        desc: "Поднимает инфраструктуру. Можно указать конкретные: task docker-up-infra -- postgres-auth redis"
+        cmds:
+            - docker compose up {{.CLI_ARGS | default "postgres-auth postgres-article redis kafka"}}
+
+    docker-down:
+        desc: "Останавливает и удаляет контейнеры"
+        cmds:
+            - docker compose down
+
+    docker-down-volumes:
+        desc: "Останавливает контейнеры и удаляет volumes"
+        cmds:
+            - docker compose down -v
+
     # e2e:
     #   desc: "Запускает E2E тесты"
     #   cmds:

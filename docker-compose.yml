@@ -1,0 +1,200 @@
+services:
+    # ============ Infrastructure ============
+
+    postgres-auth:
+        image: postgres:17
+        container_name: auth-postgres
+        ports:
+            - "${AUTH_DB_PORT}:5432"
+        environment:
+            POSTGRES_USER: ${AUTH_DB_USER}
+            POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD}
+            POSTGRES_DB: auth
+        volumes:
+            - pgdata-auth:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER}"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+    postgres-article:
+        image: postgres:17
+        container_name: article-postgres
+        ports:
+            - "${ARTICLE_DB_PORT}:5432"
+        environment:
+            POSTGRES_USER: ${ARTICLE_DB_USER}
+            POSTGRES_PASSWORD: ${ARTICLE_DB_PASSWORD}
+            POSTGRES_DB: article
+        volumes:
+            - pgdata-article:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${ARTICLE_DB_USER}"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+    redis:
+        image: redis:8-alpine
+        container_name: habr-redis
+        ports:
+            - "${REDIS_PORT}:6379"
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+    kafka:
+        image: confluentinc/cp-kafka:7.8.0
+        container_name: habr-kafka
+        ports:
+            - "${KAFKA_EXTERNAL_PORT}:${KAFKA_EXTERNAL_PORT}"
+        environment:
+            KAFKA_KRAFT_MODE: "true"
+            KAFKA_PROCESS_ROLES: controller,broker
+            KAFKA_NODE_ID: 1
+            KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:${KAFKA_CONTROLLER_PORT}"
+            KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:${KAFKA_INTERNAL_PORT},PLAINTEXT_EXTERNAL://0.0.0.0:${KAFKA_EXTERNAL_PORT},CONTROLLER://kafka:${KAFKA_CONTROLLER_PORT}
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:${KAFKA_INTERNAL_PORT},PLAINTEXT_EXTERNAL://localhost:${KAFKA_EXTERNAL_PORT}
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+            KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+            KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+            KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+            KAFKA_LOG_RETENTION_HOURS: 168
+            KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+            CLUSTER_ID: "habr-kafka-cluster-001"
+        volumes:
+            - kafka-data:/var/lib/kafka/data
+        healthcheck:
+            test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:${KAFKA_INTERNAL_PORT}"]
+            interval: 15s
+            timeout: 10s
+            retries: 10
+            start_period: 20s
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+    kafka-init:
+        image: confluentinc/cp-kafka:7.8.0
+        container_name: habr-kafka-init
+        depends_on:
+            kafka:
+                condition: service_healthy
+        restart: "no"
+        command: >
+            bash -c "
+              echo 'Creating Kafka topics...'
+              kafka-topics --bootstrap-server kafka:${KAFKA_INTERNAL_PORT} --create --topic user-registered --partitions 1 --replication-factor 1 --if-not-exists
+              echo 'Topics created:'
+              kafka-topics --bootstrap-server kafka:${KAFKA_INTERNAL_PORT} --list
+            "
+        networks:
+            - habr-network
+
+    kafka-ui:
+        image: provectuslabs/kafka-ui:v0.7.2
+        container_name: habr-kafka-ui
+        ports:
+            - "${KAFKA_UI_PORT}:8080"
+        environment:
+            KAFKA_CLUSTERS_0_NAME: habr-local
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:${KAFKA_INTERNAL_PORT}"
+        depends_on:
+            kafka:
+                condition: service_healthy
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+    # ============ Services ============
+
+    auth:
+        build:
+            context: .
+            dockerfile: services/auth/Dockerfile
+        container_name: habr-auth
+        environment:
+            AUTH_GRPC_PORT: ":50051"
+            LOGGER_LEVEL: ${LOGGER_LEVEL}
+            LOGGER_AS_JSON: ${LOGGER_AS_JSON}
+        depends_on:
+            postgres-auth:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            kafka:
+                condition: service_healthy
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+    article:
+        build:
+            context: .
+            dockerfile: services/article/Dockerfile
+        container_name: habr-article
+        environment:
+            LOGGER_LEVEL: ${LOGGER_LEVEL}
+            LOGGER_AS_JSON: ${LOGGER_AS_JSON}
+        depends_on:
+            postgres-article:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+    gateway:
+        build:
+            context: .
+            dockerfile: services/gateway/Dockerfile
+        container_name: habr-gateway
+        ports:
+            - "${GATEWAY_PORT}:8080"
+        environment:
+            LOGGER_LEVEL: ${LOGGER_LEVEL}
+            LOGGER_AS_JSON: ${LOGGER_AS_JSON}
+        depends_on:
+            - auth
+            - article
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+    notification:
+        build:
+            context: .
+            dockerfile: services/notification/Dockerfile
+        container_name: habr-notification
+        environment:
+            LOGGER_LEVEL: ${LOGGER_LEVEL}
+            LOGGER_AS_JSON: ${LOGGER_AS_JSON}
+        depends_on:
+            kafka:
+                condition: service_healthy
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+networks:
+    habr-network:
+        driver: bridge
+
+volumes:
+    pgdata-auth:
+    pgdata-article:
+    kafka-data:
