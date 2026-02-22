@@ -65,18 +65,12 @@ func Load(path ...string) error {
 
 	accessTokenTTL := defaultAccessTokenTTL
 	if v := os.Getenv("ACCESS_TOKEN_TTL"); v != "" {
-		accessTokenTTL, err = time.ParseDuration(v)
-		if err != nil {
-			return err
-		}
+		accessTokenTTL, _ = time.ParseDuration(v)
 	}
 
 	refreshTokenTTL := defaultRefreshTokenTTL
 	if v := os.Getenv("REFRESH_TOKEN_TTL"); v != "" {
-		refreshTokenTTL, err = time.ParseDuration(v)
-		if err != nil {
-			return err
-		}
+		refreshTokenTTL, _ = time.ParseDuration(v)
 	}
 
 	appConfig = &Config{

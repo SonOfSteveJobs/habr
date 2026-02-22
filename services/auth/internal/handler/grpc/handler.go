@@ -2,14 +2,12 @@ package authgrpc
 
 import (
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	authv1 "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1"
-	"github.com/SonOfSteveJobs/habr/pkg/logger"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/model"
 )
 
@@ -17,6 +15,7 @@ type AuthService interface {
 	Register(ctx context.Context, email, password string) (uuid.UUID, error)
 	Login(ctx context.Context, email, password string) (*model.TokenPair, error)
 	RefreshToken(ctx context.Context, userID uuid.UUID, refreshToken string) (*model.TokenPair, error)
+	Logout(ctx context.Context, userID uuid.UUID) error
 }
 
 type Handler struct {
@@ -70,46 +69,15 @@ func (h *Handler) VerifyEmail(_ context.Context, _ *authv1.VerifyEmailRequest) (
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
-func (h *Handler) Logout(_ context.Context, _ *authv1.LogoutRequest) (*authv1.LogoutResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func registerError(ctx context.Context, err error) error {
-	switch {
-	case errors.Is(err, model.ErrInvalidEmail):
-		return status.Error(codes.InvalidArgument, "invalid email")
-	case errors.Is(err, model.ErrInvalidPassword):
-		return status.Error(codes.InvalidArgument, "password must contain only letters and digits")
-	case errors.Is(err, model.ErrEmailAlreadyExists):
-		return status.Error(codes.AlreadyExists, "user with this email already exists")
-	default:
-		log := logger.Ctx(ctx)
-		log.Error().Err(err).Msg("register: internal error")
-
-		return status.Error(codes.Internal, "internal error")
+func (h *Handler) Logout(ctx context.Context, req *authv1.LogoutRequest) (*authv1.LogoutResponse, error) {
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id")
 	}
-}
 
-func refreshTokenError(ctx context.Context, err error) error {
-	switch {
-	case errors.Is(err, model.ErrInvalidRefreshToken):
-		return status.Error(codes.Unauthenticated, "invalid refresh token")
-	default:
-		log := logger.Ctx(ctx)
-		log.Error().Err(err).Msg("refresh token: internal error")
-
-		return status.Error(codes.Internal, "internal error")
+	if err := h.authService.Logout(ctx, userID); err != nil {
+		return nil, logoutError(ctx, err)
 	}
-}
 
-func loginError(ctx context.Context, err error) error {
-	switch {
-	case errors.Is(err, model.ErrInvalidCredentials):
-		return status.Error(codes.Unauthenticated, "invalid credentials")
-	default:
-		log := logger.Ctx(ctx)
-		log.Error().Err(err).Msg("login: internal error")
-
-		return status.Error(codes.Internal, "internal error")
-	}
+	return &authv1.LogoutResponse{}, nil
 }
