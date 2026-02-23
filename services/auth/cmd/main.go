@@ -17,6 +17,7 @@ import (
 	"github.com/SonOfSteveJobs/habr/pkg/grpcvalidate"
 	"github.com/SonOfSteveJobs/habr/pkg/kafka/producer"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
+	"github.com/SonOfSteveJobs/habr/pkg/transaction"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/config"
 	authgrpc "github.com/SonOfSteveJobs/habr/services/auth/internal/handler/grpc"
 	tokenrepo "github.com/SonOfSteveJobs/habr/services/auth/internal/repository/token"
@@ -65,7 +66,8 @@ func main() {
 		return kafkaProducer.Close()
 	})
 
-	userRepo := userrepo.New(pool)
+	txManager := transaction.New(pool)
+	userRepo := userrepo.New(txManager)
 	tokenRepo := tokenrepo.New(redisClient)
 	authService := service.New(userRepo, tokenRepo, kafkaProducer, cfg.JWTSecret(), cfg.AccessTokenTTL(), cfg.RefreshTokenTTL())
 	handler := authgrpc.New(authService)
