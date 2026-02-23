@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/SonOfSteveJobs/habr/pkg/kafka"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/model"
 )
 
@@ -55,8 +56,19 @@ func (m *mockTokenRepo) Delete(ctx context.Context, userID uuid.UUID) error {
 	return m.deleteFn(ctx, userID)
 }
 
+type mockProducer struct {
+	sendFn func(ctx context.Context, msg kafka.Message) error
+}
+
+func (m *mockProducer) Send(ctx context.Context, msg kafka.Message) error {
+	if m.sendFn != nil {
+		return m.sendFn(ctx, msg)
+	}
+	return nil
+}
+
 func newTestService(userRepo *mockUserRepo, tokenRepo *mockTokenRepo) *Service {
-	return New(userRepo, tokenRepo, testJWTSecret, testAccessTTL, testRefreshTTL)
+	return New(userRepo, tokenRepo, &mockProducer{}, testJWTSecret, testAccessTTL, testRefreshTTL)
 }
 
 func testUser(t *testing.T) *model.User {

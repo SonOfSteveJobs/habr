@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/SonOfSteveJobs/habr/pkg/kafka"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/model"
 )
 
@@ -20,9 +21,14 @@ type TokenRepository interface {
 	Delete(ctx context.Context, userID uuid.UUID) error
 }
 
+type EventProducer interface {
+	Send(ctx context.Context, msg kafka.Message) error
+}
+
 type Service struct {
 	userRepo   UserRepository
 	tokenRepo  TokenRepository
+	producer   EventProducer
 	jwtSecret  string
 	accessTTL  time.Duration
 	refreshTTL time.Duration
@@ -31,6 +37,7 @@ type Service struct {
 func New(
 	userRepo UserRepository,
 	tokenRepo TokenRepository,
+	producer EventProducer,
 	jwtSecret string,
 	accessTTL time.Duration,
 	refreshTTL time.Duration,
@@ -38,6 +45,7 @@ func New(
 	return &Service{
 		userRepo:   userRepo,
 		tokenRepo:  tokenRepo,
+		producer:   producer,
 		jwtSecret:  jwtSecret,
 		accessTTL:  accessTTL,
 		refreshTTL: refreshTTL,

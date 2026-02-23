@@ -6,6 +6,7 @@ import (
 	"net"
 	"syscall"
 
+	"github.com/IBM/sarama"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
@@ -14,6 +15,7 @@ import (
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
 	authv1 "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1"
 	"github.com/SonOfSteveJobs/habr/pkg/grpcvalidate"
+	"github.com/SonOfSteveJobs/habr/pkg/kafka/producer"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/config"
 	authgrpc "github.com/SonOfSteveJobs/habr/services/auth/internal/handler/grpc"
@@ -53,9 +55,19 @@ func main() {
 		return redisClient.Close()
 	})
 
+	kafkaCfg := producer.NewAsyncConfig(producer.WithIdempotent())
+	saramaProducer, err := sarama.NewAsyncProducer(cfg.Kafka().Brokers(), kafkaCfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create kafka producer")
+	}
+	kafkaProducer := producer.NewAsync(saramaProducer, cfg.Kafka().Topic(), nil)
+	closer.AddNamed("kafka producer", func(_ context.Context) error {
+		return kafkaProducer.Close()
+	})
+
 	userRepo := userrepo.New(pool)
 	tokenRepo := tokenrepo.New(redisClient)
-	authService := service.New(userRepo, tokenRepo, cfg.JWTSecret(), cfg.AccessTokenTTL(), cfg.RefreshTokenTTL())
+	authService := service.New(userRepo, tokenRepo, kafkaProducer, cfg.JWTSecret(), cfg.AccessTokenTTL(), cfg.RefreshTokenTTL())
 	handler := authgrpc.New(authService)
 
 	grpcServer := grpc.NewServer(

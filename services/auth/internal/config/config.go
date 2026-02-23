@@ -22,6 +22,7 @@ type Config struct {
 	accessTokenTTL  time.Duration
 	refreshTokenTTL time.Duration
 	logger          LoggerConfig
+	kafka           kafkaConfig
 }
 
 func (c *Config) GRPCPort() string               { return c.grpcPort }
@@ -31,6 +32,7 @@ func (c *Config) JWTSecret() string              { return c.jwtSecret }
 func (c *Config) AccessTokenTTL() time.Duration  { return c.accessTokenTTL }
 func (c *Config) RefreshTokenTTL() time.Duration { return c.refreshTokenTTL }
 func (c *Config) Logger() LoggerConfig           { return c.logger }
+func (c *Config) Kafka() kafkaConfig             { return c.kafka }
 
 func Load(path ...string) error {
 	err := godotenv.Load(path...)
@@ -79,6 +81,11 @@ func Load(path ...string) error {
 		}
 	}
 
+	kafka, err := newKafkaConfig()
+	if err != nil {
+		return err
+	}
+
 	appConfig = &Config{
 		grpcPort:        grpcPort,
 		dbURI:           dbURI,
@@ -87,6 +94,7 @@ func Load(path ...string) error {
 		accessTokenTTL:  accessTokenTTL,
 		refreshTokenTTL: refreshTokenTTL,
 		logger:          logger,
+		kafka:           kafka,
 	}
 
 	return nil

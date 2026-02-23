@@ -9,11 +9,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type ctxKey string
-
-const (
-	UserIDKey ctxKey = "user_id"
-)
+type loggerCtxKey struct{}
 
 var log zerolog.Logger
 
@@ -50,11 +46,9 @@ func Logger() zerolog.Logger {
 }
 
 func Ctx(ctx context.Context) zerolog.Logger {
-	l := log.With()
-
-	if userID, ok := ctx.Value(UserIDKey).(string); ok && userID != "" {
-		l = l.Str("user_id", userID)
+	if l, ok := ctx.Value(loggerCtxKey{}).(zerolog.Logger); ok {
+		return l
 	}
 
-	return l.Logger()
+	return log
 }
