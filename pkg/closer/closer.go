@@ -13,6 +13,16 @@ import (
 
 const shutdownTimeout = 5 * time.Second
 
+// Closer
+// Менеджер graceful shutdown. Ресурсы регистрируются при создании, закрываются автоматически при получении сигнала.
+//
+// Возможности:
+//
+// последний зарегистрированный закрывается первым (gRPC -> Redis -> Postgres)
+// если ресурс завис, shutdown завершится по таймауту
+// Panic recovery
+// второй Cmd+C принудительно завершает процесс
+// логирует имя ресурса и время закрытия
 type Closer struct {
 	mu    sync.Mutex
 	once  sync.Once
