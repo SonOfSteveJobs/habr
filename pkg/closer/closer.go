@@ -28,27 +28,14 @@ func NewCloser() *Closer {
 	}
 }
 
-// Add добавляет функции закрытия
-func Add(f ...func(context.Context) error) {
-	globalCloser.Add(f...)
-}
-
-// AddNamed добавляет функцию закрытия с именем ресурса для логирования
 func AddNamed(name string, f func(context.Context) error) {
 	globalCloser.AddNamed(name, f)
 }
 
-// CloseAll вызывает все зарегистрированные функции закрытия
-func CloseAll(ctx context.Context) error {
-	return globalCloser.CloseAll(ctx)
-}
-
-// Wait ожидает завершения graceful shutdown
 func Wait() {
 	<-globalCloser.done
 }
 
-// Listen слушает системные сигналы и запускает graceful shutdown
 func Listen(signals ...os.Signal) {
 	go globalCloser.listen(signals...)
 }
@@ -58,6 +45,16 @@ func (c *Closer) Add(f ...func(context.Context) error) {
 	defer c.mu.Unlock()
 
 	c.funcs = append(c.funcs, f...)
+}
+
+func callCloser(ctx context.Context, f func(context.Context) error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic in closer: %v", r)
+		}
+	}()
+
+	return f(ctx)
 }
 
 func (c *Closer) AddNamed(name string, f func(context.Context) error) {
@@ -98,31 +95,7 @@ func (c *Closer) CloseAll(ctx context.Context) error {
 		log := logger.Logger()
 		log.Info().Msg("starting graceful shutdown")
 
-		errCh := make(chan error, len(funcs))
-		var wg sync.WaitGroup
-
 		for i := len(funcs) - 1; i >= 0; i-- {
-			f := funcs[i]
-
-			wg.Go(func() {
-				defer func() {
-					if r := recover(); r != nil {
-						errCh <- fmt.Errorf("panic in closer: %v", r)
-					}
-				}()
-
-				if err := f(ctx); err != nil {
-					errCh <- err
-				}
-			})
-		}
-
-		go func() {
-			wg.Wait()
-			close(errCh)
-		}()
-
-		for {
 			select {
 			case <-ctx.Done():
 				log.Error().Err(ctx.Err()).Msg("shutdown timeout exceeded")
@@ -132,12 +105,10 @@ func (c *Closer) CloseAll(ctx context.Context) error {
 				}
 
 				return
-			case err, ok := <-errCh:
-				if !ok {
-					log.Info().Msg("graceful shutdown completed")
-					return
-				}
+			default:
+			}
 
+			if err := callCloser(ctx, funcs[i]); err != nil {
 				log.Error().Err(err).Msg("shutdown error")
 
 				if result == nil {
@@ -145,6 +116,8 @@ func (c *Closer) CloseAll(ctx context.Context) error {
 				}
 			}
 		}
+
+		log.Info().Msg("graceful shutdown completed")
 	})
 
 	return result

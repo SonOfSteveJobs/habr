@@ -14,8 +14,6 @@ service AuthService {
   rpc Login(LoginRequest) returns (LoginResponse);
   // RefreshToken - обновление access токена
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
-  // VerifyEmail - подтверждение email
-  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
   // Logout - выход из системы
   rpc Logout(LogoutRequest) returns (LogoutResponse);
 }
@@ -56,13 +54,6 @@ message RefreshTokenResponse {
   // refresh_token - refresh токен пользователя, живет 30 дней
   string refresh_token = 2;
 }
-
-message VerifyEmailRequest {
-  // token - токен подтверждения email из письма
-  string token = 1 [(buf.validate.field).string.min_len = 1];
-}
-
-message VerifyEmailResponse {}
 
 message LogoutRequest {
   //user_id - uuid идентификатор пользователя

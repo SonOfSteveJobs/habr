@@ -58,7 +58,3 @@ func Ctx(ctx context.Context) zerolog.Logger {
 
 	return l.Logger()
 }
-
-func WithUserID(ctx context.Context, userID string) context.Context {
-	return context.WithValue(ctx, UserIDKey, userID)
-}

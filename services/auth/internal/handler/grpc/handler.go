@@ -65,10 +65,6 @@ func (h *Handler) RefreshToken(ctx context.Context, req *authv1.RefreshTokenRequ
 	}, nil
 }
 
-func (h *Handler) VerifyEmail(_ context.Context, _ *authv1.VerifyEmailRequest) (*authv1.VerifyEmailResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
 func (h *Handler) Logout(ctx context.Context, req *authv1.LogoutRequest) (*authv1.LogoutResponse, error) {
 	userID, err := uuid.Parse(req.GetUserId())
 	if err != nil {

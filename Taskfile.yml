@@ -158,8 +158,3 @@ tasks:
         deps: [install-goose]
         cmds:
             - '{{.GOOSE}} -dir migrations/article postgres "postgres://${ARTICLE_DB_USER}:${ARTICLE_DB_PASSWORD}@localhost:${ARTICLE_DB_PORT}/article?sslmode=disable" status'
-
-    # e2e:
-    #   desc: "Запускает E2E тесты"
-    #   cmds:
-    #     - go test ./tests/e2e/... -v
