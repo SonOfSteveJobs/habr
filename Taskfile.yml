@@ -100,7 +100,7 @@ tasks:
     docker-up-infra:
         desc: "Поднимает инфраструктуру. Можно указать конкретные: task docker-up-infra -- postgres-auth redis"
         cmds:
-            - docker compose up {{.CLI_ARGS | default "postgres-auth postgres-article redis kafka"}}
+            - docker compose up {{.CLI_ARGS | default "postgres-auth postgres-article redis kafka kafka-init kafka-ui"}}
 
     docker-down:
         desc: "Останавливает и удаляет контейнеры"

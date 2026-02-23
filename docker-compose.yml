@@ -11,7 +11,7 @@ services:
         volumes:
             - pgdata-auth:/var/lib/postgresql/data
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER}"]
+            test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER} -d auth"]
             interval: 10s
             timeout: 5s
             retries: 5
@@ -31,7 +31,7 @@ services:
         volumes:
             - pgdata-article:/var/lib/postgresql/data
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${ARTICLE_DB_USER}"]
+            test: ["CMD-SHELL", "pg_isready -U ${ARTICLE_DB_USER} -d article"]
             interval: 10s
             timeout: 5s
             retries: 5

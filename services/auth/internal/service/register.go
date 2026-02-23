@@ -8,8 +8,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/SonOfSteveJobs/habr/pkg/kafka"
-	"github.com/SonOfSteveJobs/habr/pkg/logger"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/model"
 )
 
@@ -26,19 +24,26 @@ func (s *Service) Register(ctx context.Context, email, password string) (uuid.UU
 		return uuid.Nil, err
 	}
 
-	if err := s.userRepo.Create(ctx, user); err != nil {
-		return uuid.Nil, err
-	}
+	err = s.txManager.Wrap(ctx, func(ctx context.Context) error {
+		if err := s.userRepo.Create(ctx, user); err != nil {
+			return err
+		}
 
-	if err := s.publishUserRegistered(ctx, user); err != nil {
-		log := logger.Ctx(ctx)
-		log.Error().Err(err).Msg("failed to publish user-registered event")
+		outboxEvent, err := s.buildOutboxEvent(user)
+		if err != nil {
+			return err
+		}
+
+		return s.outboxRepo.Insert(ctx, outboxEvent)
+	})
+	if err != nil {
+		return uuid.Nil, err
 	}
 
 	return user.ID, nil
 }
 
-func (s *Service) publishUserRegistered(ctx context.Context, user *model.User) error {
+func (s *Service) buildOutboxEvent(user *model.User) (model.OutboxEvent, error) {
 	event := UserRegisteredEvent{
 		EventID:   uuid.New().String(),
 		UserID:    user.ID.String(),
@@ -48,14 +53,14 @@ func (s *Service) publishUserRegistered(ctx context.Context, user *model.User) e
 
 	value, err := json.Marshal(event)
 	if err != nil {
-		return fmt.Errorf("marshal event: %w", err)
+		return model.OutboxEvent{}, fmt.Errorf("marshal event: %w", err)
 	}
 
-	msg := kafka.Message{
-		Key:      []byte(user.ID.String()),
-		Value:    value,
-		Metadata: event.EventID,
-	}
-
-	return s.producer.Send(ctx, msg)
+	return model.OutboxEvent{
+		EventID:   uuid.MustParse(event.EventID),
+		Topic:     s.kafkaTopic,
+		Key:       []byte(user.ID.String()),
+		Value:     value,
+		CreatedAt: event.CreatedAt,
+	}, nil
 }

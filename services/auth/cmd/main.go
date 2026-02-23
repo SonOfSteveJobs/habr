@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/IBM/sarama"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
@@ -20,6 +21,8 @@ import (
 	"github.com/SonOfSteveJobs/habr/pkg/transaction"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/config"
 	authgrpc "github.com/SonOfSteveJobs/habr/services/auth/internal/handler/grpc"
+	"github.com/SonOfSteveJobs/habr/services/auth/internal/outbox"
+	outboxrepo "github.com/SonOfSteveJobs/habr/services/auth/internal/repository/outbox"
 	tokenrepo "github.com/SonOfSteveJobs/habr/services/auth/internal/repository/token"
 	userrepo "github.com/SonOfSteveJobs/habr/services/auth/internal/repository/user"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/service"
@@ -56,20 +59,51 @@ func main() {
 		return redisClient.Close()
 	})
 
+	txManager := transaction.New(pool)
+	outboxRepo := outboxrepo.New(txManager)
+
+	onSuccess := func(metadata any) {
+		eventID, ok := metadata.(string)
+		if !ok {
+			return
+		}
+
+		uid, err := uuid.Parse(eventID)
+		if err != nil {
+			log.Error().Err(err).Str("event_id", eventID).Msg("outbox: invalid event_id in metadata")
+			return
+		}
+
+		if err := outboxRepo.MarkSent(context.Background(), uid); err != nil {
+			log.Error().Err(err).Str("event_id", eventID).Msg("outbox: mark sent failed")
+		}
+	}
+
 	kafkaCfg := producer.NewAsyncConfig(producer.WithIdempotent())
 	saramaProducer, err := sarama.NewAsyncProducer(cfg.Kafka().Brokers(), kafkaCfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create kafka producer")
 	}
-	kafkaProducer := producer.NewAsync(saramaProducer, cfg.Kafka().Topic(), nil)
+	kafkaProducer := producer.NewAsync(saramaProducer, cfg.Kafka().Topic(), onSuccess)
 	closer.AddNamed("kafka producer", func(_ context.Context) error {
 		return kafkaProducer.Close()
 	})
 
-	txManager := transaction.New(pool)
+	relay := outbox.NewRelay(outboxRepo, kafkaProducer)
+	relayCtx, relayCancel := context.WithCancel(context.Background())
+	go relay.Run(relayCtx)
+	closer.AddNamed("outbox relay", func(_ context.Context) error {
+		relayCancel()
+		return nil
+	})
+
 	userRepo := userrepo.New(txManager)
 	tokenRepo := tokenrepo.New(redisClient)
-	authService := service.New(userRepo, tokenRepo, kafkaProducer, cfg.JWTSecret(), cfg.AccessTokenTTL(), cfg.RefreshTokenTTL())
+	authService := service.New(
+		userRepo, tokenRepo, outboxRepo, txManager,
+		cfg.JWTSecret(), cfg.Kafka().Topic(),
+		cfg.AccessTokenTTL(), cfg.RefreshTokenTTL(),
+	)
 	handler := authgrpc.New(authService)
 
 	grpcServer := grpc.NewServer(
