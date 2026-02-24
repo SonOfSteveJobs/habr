@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/SonOfSteveJobs/habr/pkg/kafka/consumer"
 	"github.com/SonOfSteveJobs/habr/services/notification/internal/config"
+	"github.com/SonOfSteveJobs/habr/services/notification/internal/email_sender"
 	eventRepo "github.com/SonOfSteveJobs/habr/services/notification/internal/repository/event"
 	"github.com/SonOfSteveJobs/habr/services/notification/internal/service"
 )
@@ -47,6 +48,7 @@ func (c *serviceContainer) NotificationService() *service.Service {
 		c.notificationService = service.New(
 			c.EventRepository(),
 			c.infra.TxManager(),
+			email_sender.NewLog(),
 			config.AppConfig().EventTTL(),
 		)
 	}

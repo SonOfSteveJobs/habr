@@ -5,30 +5,30 @@ import (
 	"strings"
 )
 
-type KafkaConfig struct {
+type kafkaConfig struct {
 	brokers []string
 	topic   string
 	groupID string
 }
 
-func (c KafkaConfig) Brokers() []string { return c.brokers }
-func (c KafkaConfig) Topic() string     { return c.topic }
-func (c KafkaConfig) GroupID() string   { return c.groupID }
+func (c *kafkaConfig) Brokers() []string { return c.brokers }
+func (c *kafkaConfig) Topic() string     { return c.topic }
+func (c *kafkaConfig) GroupID() string   { return c.groupID }
 
-func newKafkaConfig() (KafkaConfig, error) {
+func newKafkaConfig() (*kafkaConfig, error) {
 	brokersStr := os.Getenv("KAFKA_BROKERS")
 	if brokersStr == "" {
-		return KafkaConfig{}, ErrKafkaBrokersNotProvided
+		return nil, ErrKafkaBrokersNotProvided
 	}
 
 	topic := os.Getenv("KAFKA_TOPIC")
 	if topic == "" {
-		return KafkaConfig{}, ErrKafkaTopicNotProvided
+		return nil, ErrKafkaTopicNotProvided
 	}
 
 	groupID := os.Getenv("KAFKA_GROUP_ID")
 	if groupID == "" {
-		return KafkaConfig{}, ErrKafkaGroupIDNotProvided
+		return nil, ErrKafkaGroupIDNotProvided
 	}
 
 	brokers := strings.Split(brokersStr, ",")
@@ -36,7 +36,7 @@ func newKafkaConfig() (KafkaConfig, error) {
 		brokers[i] = strings.TrimSpace(brokers[i])
 	}
 
-	return KafkaConfig{
+	return &kafkaConfig{
 		brokers: brokers,
 		topic:   topic,
 		groupID: groupID,

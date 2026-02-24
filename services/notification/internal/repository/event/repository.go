@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -28,10 +29,10 @@ func (r *Repository) MarkProcessed(ctx context.Context, eventID uuid.UUID) (bool
 	return ct.RowsAffected() == 1, nil
 }
 
-func (r *Repository) DeleteOld(ctx context.Context) error {
-	const query = `DELETE FROM processed_events WHERE processed_at < now() - INTERVAL '7 days'`
+func (r *Repository) DeleteOld(ctx context.Context, retention time.Duration) error {
+	const query = `DELETE FROM processed_events WHERE processed_at < now() - $1::interval`
 
-	_, err := r.txManager.ExtractExecutor(ctx).Exec(ctx, query)
+	_, err := r.txManager.ExtractExecutor(ctx).Exec(ctx, query, retention.String())
 	if err != nil {
 		return fmt.Errorf("delete old events: %w", err)
 	}

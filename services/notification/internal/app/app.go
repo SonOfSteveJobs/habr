@@ -6,6 +6,7 @@ import (
 
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
+	"github.com/SonOfSteveJobs/habr/services/notification/internal/config"
 )
 
 type App struct {
@@ -45,7 +46,8 @@ func (a *App) Run() {
 	})
 
 	go func() {
-		ticker := time.NewTicker(1 * time.Hour)
+		cfg := config.AppConfig()
+		ticker := time.NewTicker(cfg.CleanupInterval())
 		defer ticker.Stop()
 
 		for {
@@ -53,9 +55,11 @@ func (a *App) Run() {
 			case <-cleanupCtx.Done():
 				return
 			case <-ticker.C:
-				if err := a.service.EventRepository().DeleteOld(cleanupCtx); err != nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				if err := a.service.EventRepository().DeleteOld(ctx, cfg.RetentionPeriod()); err != nil {
 					log.Error().Err(err).Msg("failed to cleanup old events")
 				}
+				cancel()
 			}
 		}
 	}()

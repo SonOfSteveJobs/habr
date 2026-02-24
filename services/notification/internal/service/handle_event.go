@@ -47,10 +47,9 @@ func (s *Service) HandleEvent(ctx context.Context, msg kafka.Message) error {
 			return nil
 		}
 
-		log.Info().
-			Str("event_id", event.EventID).
-			Str("email", event.Email).
-			Msgf("message with code: %s sent to %s", event.Code, event.Email)
+		if err := s.emailSender.Send(ctx, event); err != nil {
+			return fmt.Errorf("send email: %w", err)
+		}
 
 		return nil
 	})

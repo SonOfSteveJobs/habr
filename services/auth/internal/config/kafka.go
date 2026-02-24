@@ -13,7 +13,7 @@ const (
 	defaultOutboxFetchLimit      = 100
 )
 
-type KafkaConfig struct {
+type kafkaConfig struct {
 	brokers               []string
 	topic                 string
 	outboxPollInterval    time.Duration
@@ -21,21 +21,21 @@ type KafkaConfig struct {
 	outboxFetchLimit      int
 }
 
-func (c KafkaConfig) Brokers() []string                    { return c.brokers }
-func (c KafkaConfig) Topic() string                        { return c.topic }
-func (c KafkaConfig) OutboxPollInterval() time.Duration    { return c.outboxPollInterval }
-func (c KafkaConfig) OutboxCleanupInterval() time.Duration { return c.outboxCleanupInterval }
-func (c KafkaConfig) OutboxFetchLimit() int                { return c.outboxFetchLimit }
+func (c *kafkaConfig) Brokers() []string                    { return c.brokers }
+func (c *kafkaConfig) Topic() string                        { return c.topic }
+func (c *kafkaConfig) OutboxPollInterval() time.Duration    { return c.outboxPollInterval }
+func (c *kafkaConfig) OutboxCleanupInterval() time.Duration { return c.outboxCleanupInterval }
+func (c *kafkaConfig) OutboxFetchLimit() int                { return c.outboxFetchLimit }
 
-func newKafkaConfig() (KafkaConfig, error) {
+func newKafkaConfig() (*kafkaConfig, error) {
 	brokersStr := os.Getenv("KAFKA_BROKERS")
 	if brokersStr == "" {
-		return KafkaConfig{}, ErrKafkaBrokersNotProvided
+		return nil, ErrKafkaBrokersNotProvided
 	}
 
 	topic := os.Getenv("KAFKA_TOPIC")
 	if topic == "" {
-		return KafkaConfig{}, ErrKafkaTopicNotProvided
+		return nil, ErrKafkaTopicNotProvided
 	}
 
 	brokers := strings.Split(brokersStr, ",")
@@ -64,7 +64,7 @@ func newKafkaConfig() (KafkaConfig, error) {
 		}
 	}
 
-	return KafkaConfig{
+	return &kafkaConfig{
 		brokers:               brokers,
 		topic:                 topic,
 		outboxPollInterval:    outboxPollInterval,
