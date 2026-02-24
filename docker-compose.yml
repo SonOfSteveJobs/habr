@@ -39,6 +39,26 @@ services:
         networks:
             - habr-network
 
+    postgres-notification:
+        image: postgres:17
+        container_name: notification-postgres
+        ports:
+            - "${NOTIFICATION_DB_PORT}:5432"
+        environment:
+            POSTGRES_USER: ${NOTIFICATION_DB_USER}
+            POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+            POSTGRES_DB: notification
+        volumes:
+            - pgdata-notification:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${NOTIFICATION_DB_USER} -d notification"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+        networks:
+            - habr-network
+
     redis:
         image: redis:8-alpine
         container_name: habr-redis
@@ -192,10 +212,15 @@ services:
             dockerfile: services/notification/Dockerfile
         container_name: habr-notification
         environment:
+            DB_URI: "postgres://${NOTIFICATION_DB_USER}:${NOTIFICATION_DB_PASSWORD}@postgres-notification:5432/notification?sslmode=disable"
             KAFKA_BROKERS: "kafka:${KAFKA_INTERNAL_PORT}"
+            KAFKA_TOPIC: "user-registered"
+            KAFKA_GROUP_ID: "notification-group"
             LOGGER_LEVEL: ${LOGGER_LEVEL}
             LOGGER_AS_JSON: ${LOGGER_AS_JSON}
         depends_on:
+            postgres-notification:
+                condition: service_healthy
             kafka:
                 condition: service_healthy
         restart: unless-stopped
@@ -209,4 +234,5 @@ networks:
 volumes:
     pgdata-auth:
     pgdata-article:
+    pgdata-notification:
     kafka-data:

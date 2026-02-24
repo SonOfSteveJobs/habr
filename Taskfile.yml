@@ -92,6 +92,18 @@ tasks:
         cmds:
             - go test ./services/... ./pkg/... -v
 
+    run-auth:
+        desc: "Запускает auth service локально"
+        dotenv: ["services/auth/.env"]
+        cmds:
+            - go run ./services/auth/cmd
+
+    run-notification:
+        desc: "Запускает notification service локально"
+        dotenv: ["services/notification/.env"]
+        cmds:
+            - go run ./services/notification/cmd
+
     docker-up:
         desc: "Поднимает все сервисы и инфраструктуру"
         cmds:

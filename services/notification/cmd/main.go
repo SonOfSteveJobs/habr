@@ -7,8 +7,8 @@ import (
 
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
-	"github.com/SonOfSteveJobs/habr/services/auth/internal/app"
-	"github.com/SonOfSteveJobs/habr/services/auth/internal/config"
+	"github.com/SonOfSteveJobs/habr/services/notification/internal/app"
+	"github.com/SonOfSteveJobs/habr/services/notification/internal/config"
 )
 
 //goland:noinspection ругается потому что монорепа
