@@ -92,6 +92,11 @@ tasks:
         cmds:
             - go test ./services/... ./pkg/... -v
 
+    test-integration:
+        desc: "Запускает интеграционные тесты (требует Docker)"
+        cmds:
+            - go test -tags=integration -v -count=1 -timeout=5m ./tests/...
+
     run-auth:
         desc: "Запускает auth service локально"
         dotenv: ["services/auth/.env"]
