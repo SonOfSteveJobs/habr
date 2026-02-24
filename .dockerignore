@@ -1,0 +1,8 @@
+bin/
+.git/
+.env
+.env.*
+!.env.example
+*.md
+.golangci.yml
+.claude/

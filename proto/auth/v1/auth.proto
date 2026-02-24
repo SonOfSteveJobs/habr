@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package auth.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1;authv1";
+
+// AuthService - API для работы с учетными данными
+service AuthService {
+  // Register - создание нового пользователя
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  // Login - аутентификация пользователя
+  rpc Login(LoginRequest) returns (LoginResponse);
+  // RefreshToken - обновление access токена
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  // Logout - выход из системы
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}
+
+message RegisterRequest {
+  // email - email пользователя
+  string email = 1 [(buf.validate.field).string.email = true];
+  // password - пароль пользователя
+  string password = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 20];
+}
+
+message RegisterResponse {}
+
+message LoginRequest {
+  // email - email пользователя
+  string email = 1 [(buf.validate.field).string.email = true];
+  // password - пароль пользователя
+  string password = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 20];
+}
+
+message LoginResponse {
+  // access_token - access токен пользователя, живет 10 минут
+  string access_token = 1;
+  // refresh_token - refresh токен пользователя, живет 30 дней
+  string refresh_token = 2;
+}
+
+message RefreshTokenRequest {
+  // user_id - uuid идентификатор пользователя
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  // refresh_token - refresh токен пользователя
+  string refresh_token = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message RefreshTokenResponse {
+  // access_token - access токен пользователя, живет 10 минут
+  string access_token = 1;
+  // refresh_token - refresh токен пользователя, живет 30 дней
+  string refresh_token = 2;
+}
+
+message LogoutRequest {
+  //user_id - uuid идентификатор пользователя
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message LogoutResponse {}
