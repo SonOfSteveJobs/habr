@@ -112,7 +112,7 @@ tasks:
     docker-up-infra:
         desc: "Поднимает инфраструктуру. Можно указать конкретные: task docker-up-infra -- postgres-auth redis"
         cmds:
-            - docker compose up {{.CLI_ARGS | default "postgres-auth postgres-article redis kafka kafka-init kafka-ui"}}
+            - docker compose up {{.CLI_ARGS | default "postgres-auth postgres-article postgres-notification redis kafka kafka-init kafka-ui"}}
 
     docker-down:
         desc: "Останавливает и удаляет контейнеры"
@@ -170,3 +170,21 @@ tasks:
         deps: [install-goose]
         cmds:
             - '{{.GOOSE}} -dir migrations/article postgres "postgres://${ARTICLE_DB_USER}:${ARTICLE_DB_PASSWORD}@localhost:${ARTICLE_DB_PORT}/article?sslmode=disable" status'
+
+    migrate-notification-up:
+        desc: "Применяет миграции notification"
+        deps: [install-goose]
+        cmds:
+            - '{{.GOOSE}} -dir migrations/notification postgres "postgres://${NOTIFICATION_DB_USER}:${NOTIFICATION_DB_PASSWORD}@localhost:${NOTIFICATION_DB_PORT}/notification?sslmode=disable" up'
+
+    migrate-notification-down:
+        desc: "Откатывает последнюю миграцию notification"
+        deps: [install-goose]
+        cmds:
+            - '{{.GOOSE}} -dir migrations/notification postgres "postgres://${NOTIFICATION_DB_USER}:${NOTIFICATION_DB_PASSWORD}@localhost:${NOTIFICATION_DB_PORT}/notification?sslmode=disable" down'
+
+    migrate-notification-status:
+        desc: "Показывает статус миграций notification"
+        deps: [install-goose]
+        cmds:
+            - '{{.GOOSE}} -dir migrations/notification postgres "postgres://${NOTIFICATION_DB_USER}:${NOTIFICATION_DB_PASSWORD}@localhost:${NOTIFICATION_DB_PORT}/notification?sslmode=disable" status'

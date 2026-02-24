@@ -9,11 +9,12 @@ import (
 
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
 	"github.com/SonOfSteveJobs/habr/pkg/kafka/consumer"
+	"github.com/SonOfSteveJobs/habr/pkg/transaction"
 	"github.com/SonOfSteveJobs/habr/services/notification/internal/config"
 )
 
 type infraContainer struct {
-	pgPool        *pgxpool.Pool
+	txManager     *transaction.Manager
 	consumerGroup sarama.ConsumerGroup
 }
 
@@ -31,7 +32,7 @@ func newInfraContainer(ctx context.Context) (*infraContainer, error) {
 	return c, nil
 }
 
-func (c *infraContainer) PgPool() *pgxpool.Pool               { return c.pgPool }
+func (c *infraContainer) TxManager() *transaction.Manager     { return c.txManager }
 func (c *infraContainer) ConsumerGroup() sarama.ConsumerGroup { return c.consumerGroup }
 
 func (c *infraContainer) initPgPool(ctx context.Context) error {
@@ -44,7 +45,7 @@ func (c *infraContainer) initPgPool(ctx context.Context) error {
 		return nil
 	})
 
-	c.pgPool = pool
+	c.txManager = transaction.New(pool)
 	return nil
 }
 

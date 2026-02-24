@@ -2,9 +2,9 @@ package app
 
 import (
 	"context"
+	"time"
 
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
-	"github.com/SonOfSteveJobs/habr/pkg/kafka"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
 )
 
@@ -33,17 +33,30 @@ func (a *App) Run() {
 	})
 
 	go func() {
-		handler := func(ctx context.Context, msg kafka.Message) error {
-			log.Info().
-				Str("topic", msg.Topic).
-				Int32("partition", msg.Partition).
-				Int64("offset", msg.Offset).
-				Msg("received message")
-			return nil
-		}
-
-		if err := a.service.KafkaConsumer().Consume(consumerCtx, handler); err != nil {
+		if err := a.service.KafkaConsumer().Consume(consumerCtx, a.service.NotificationService().HandleEvent); err != nil {
 			log.Error().Err(err).Msg("kafka consumer failed")
+		}
+	}()
+
+	cleanupCtx, cleanupCancel := context.WithCancel(context.Background())
+	closer.AddNamed("cleanup", func(_ context.Context) error {
+		cleanupCancel()
+		return nil
+	})
+
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-cleanupCtx.Done():
+				return
+			case <-ticker.C:
+				if err := a.service.EventRepository().DeleteOld(cleanupCtx); err != nil {
+					log.Error().Err(err).Msg("failed to cleanup old events")
+				}
+			}
 		}
 	}()
 
