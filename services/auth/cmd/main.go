@@ -89,7 +89,13 @@ func main() {
 		return kafkaProducer.Close()
 	})
 
-	relay := outbox.NewRelay(outboxRepo, kafkaProducer)
+	relay := outbox.NewRelay(
+		outboxRepo,
+		kafkaProducer,
+		cfg.Kafka().OutboxPollInterval(),
+		cfg.Kafka().OutboxCleanupInterval(),
+		cfg.Kafka().OutboxFetchLimit(),
+	)
 	relayCtx, relayCancel := context.WithCancel(context.Background())
 	go relay.Run(relayCtx)
 	closer.AddNamed("outbox relay", func(_ context.Context) error {

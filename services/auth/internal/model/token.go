@@ -12,8 +12,8 @@ import (
 const refreshTokenBytes = 32
 
 type TokenPair struct {
-	AccessToken  string
-	RefreshToken string
+	AccessToken  string //nolint:gosec // возвращается на клиент, тут все ок
+	RefreshToken string //nolint:gosec // возвращается на клиент, тут все ок
 }
 
 func NewTokenPair(userID uuid.UUID, secret string, accessTTL time.Duration) (*TokenPair, error) {
