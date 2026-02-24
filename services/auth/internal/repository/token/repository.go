@@ -35,7 +35,7 @@ func (r *Repository) Validate(ctx context.Context, refreshToken string, userID u
 		return err
 	}
 
-	if stored != hashToken(refreshToken) {
+	if stored != hashToken(fmt.Sprintf("refresh_token:%s", refreshToken)) {
 		return model.ErrInvalidRefreshToken
 	}
 
@@ -49,5 +49,5 @@ func (r *Repository) Delete(ctx context.Context, userID uuid.UUID) error {
 func hashToken(token string) string {
 	hash := sha256.Sum256([]byte(token))
 
-	return fmt.Sprintf("%x", hash)
+	return fmt.Sprintf("refresh_token:%x", hash)
 }

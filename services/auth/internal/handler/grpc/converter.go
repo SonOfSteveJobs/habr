@@ -57,3 +57,17 @@ func logoutError(ctx context.Context, err error) error {
 
 	return status.Error(codes.Internal, "internal error")
 }
+
+func verifyEmailError(ctx context.Context, err error) error {
+	switch {
+	case errors.Is(err, model.ErrInvalidVerificationCode):
+		return status.Error(codes.InvalidArgument, "invalid verification code")
+	case errors.Is(err, model.ErrUserNotFound):
+		return status.Error(codes.NotFound, "user not found")
+	default:
+		log := logger.Ctx(ctx)
+		log.Error().Err(err).Msg("verify email: internal error")
+
+		return status.Error(codes.Internal, "internal error")
+	}
+}

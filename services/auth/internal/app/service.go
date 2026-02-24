@@ -14,19 +14,21 @@ import (
 	outboxrepo "github.com/SonOfSteveJobs/habr/services/auth/internal/repository/outbox"
 	tokenrepo "github.com/SonOfSteveJobs/habr/services/auth/internal/repository/token"
 	userrepo "github.com/SonOfSteveJobs/habr/services/auth/internal/repository/user"
+	verificationrepo "github.com/SonOfSteveJobs/habr/services/auth/internal/repository/verification"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/service"
 )
 
 type serviceContainer struct {
 	infra *infraContainer
 
-	outboxRepo    *outboxrepo.Repository
-	userRepo      *userrepo.Repository
-	tokenRepo     *tokenrepo.Repository
-	kafkaProducer *producer.AsyncProducer
-	outboxRelay   *outbox.Relay
-	authService   *service.Service
-	handler       *authgrpc.Handler
+	outboxRepo       *outboxrepo.Repository
+	userRepo         *userrepo.Repository
+	tokenRepo        *tokenrepo.Repository
+	verificationRepo *verificationrepo.Repository
+	kafkaProducer    *producer.AsyncProducer
+	outboxRelay      *outbox.Relay
+	authService      *service.Service
+	handler          *authgrpc.Handler
 }
 
 func newServiceContainer(infra *infraContainer) *serviceContainer {
@@ -55,6 +57,14 @@ func (c *serviceContainer) TokenRepo() *tokenrepo.Repository {
 	}
 
 	return c.tokenRepo
+}
+
+func (c *serviceContainer) VerificationRepo() *verificationrepo.Repository {
+	if c.verificationRepo == nil {
+		c.verificationRepo = verificationrepo.New(c.infra.RedisClient())
+	}
+
+	return c.verificationRepo
 }
 
 func (c *serviceContainer) KafkaProducer() *producer.AsyncProducer {
@@ -109,9 +119,16 @@ func (c *serviceContainer) AuthService() *service.Service {
 	if c.authService == nil {
 		cfg := config.AppConfig()
 		c.authService = service.New(
-			c.UserRepo(), c.TokenRepo(), c.OutboxRepo(), c.infra.TxManager(),
-			cfg.JWTSecret(), cfg.Kafka().Topic(),
-			cfg.AccessTokenTTL(), cfg.RefreshTokenTTL(),
+			c.UserRepo(),
+			c.TokenRepo(),
+			c.VerificationRepo(),
+			c.OutboxRepo(),
+			c.infra.TxManager(),
+			cfg.JWTSecret(),
+			cfg.Kafka().Topic(),
+			cfg.AccessTokenTTL(),
+			cfg.RefreshTokenTTL(),
+			cfg.VerificationCodeTTL(),
 		)
 	}
 

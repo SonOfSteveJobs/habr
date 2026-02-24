@@ -16,6 +16,7 @@ type AuthService interface {
 	Login(ctx context.Context, email, password string) (*model.TokenPair, error)
 	RefreshToken(ctx context.Context, userID uuid.UUID, refreshToken string) (*model.TokenPair, error)
 	Logout(ctx context.Context, userID uuid.UUID) error
+	VerifyEmail(ctx context.Context, userID uuid.UUID, code string) error
 }
 
 type Handler struct {
@@ -76,4 +77,17 @@ func (h *Handler) Logout(ctx context.Context, req *authv1.LogoutRequest) (*authv
 	}
 
 	return &authv1.LogoutResponse{}, nil
+}
+
+func (h *Handler) VerifyEmail(ctx context.Context, req *authv1.VerifyEmailRequest) (*authv1.VerifyEmailResponse, error) {
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id")
+	}
+
+	if err := h.authService.VerifyEmail(ctx, userID, req.GetCode()); err != nil {
+		return nil, verifyEmailError(ctx, err)
+	}
+
+	return &authv1.VerifyEmailResponse{}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/SonOfSteveJobs/habr/pkg/transaction"
@@ -32,6 +33,21 @@ func (r *Repository) Create(ctx context.Context, user *model.User) error {
 
 	if ct.RowsAffected() == 0 {
 		return model.ErrEmailAlreadyExists
+	}
+
+	return nil
+}
+
+func (r *Repository) ConfirmEmail(ctx context.Context, userID uuid.UUID) error {
+	const query = `UPDATE users SET is_email_confirmed = true WHERE id = $1`
+
+	ct, err := r.txManager.ExtractExecutor(ctx).Exec(ctx, query, userID)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return model.ErrUserNotFound
 	}
 
 	return nil
