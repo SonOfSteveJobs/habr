@@ -140,6 +140,12 @@ tasks:
         cmds:
             - go run ./services/gateway/cmd
 
+    run-article:
+        desc: "Запускает article service локально"
+        dotenv: ["services/article/.env"]
+        cmds:
+            - go run ./services/article/cmd
+
     docker-up:
         desc: "Поднимает все сервисы и инфраструктуру"
         cmds:
