@@ -109,6 +109,12 @@ tasks:
         cmds:
             - go run ./services/notification/cmd
 
+    run-gateway:
+        desc: "Запускает gateway service локально"
+        dotenv: ["services/gateway/.env"]
+        cmds:
+            - go run ./services/gateway/cmd
+
     docker-up:
         desc: "Поднимает все сервисы и инфраструктуру"
         cmds:
