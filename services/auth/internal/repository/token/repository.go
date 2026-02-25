@@ -35,7 +35,7 @@ func (r *Repository) Validate(ctx context.Context, refreshToken string, userID u
 		return err
 	}
 
-	if stored != hashToken(fmt.Sprintf("refresh_token:%s", refreshToken)) {
+	if stored != hashToken(refreshToken) {
 		return model.ErrInvalidRefreshToken
 	}
 

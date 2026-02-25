@@ -8,8 +8,10 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
+	gatewayv1 "github.com/SonOfSteveJobs/habr/pkg/gen/gateway/v1"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
 	"github.com/SonOfSteveJobs/habr/services/gateway/internal/config"
+	"github.com/SonOfSteveJobs/habr/services/gateway/internal/handler/middleware"
 )
 
 type App struct {
@@ -86,7 +88,15 @@ func (a *App) initService(_ context.Context) error {
 }
 
 func (a *App) initRouter(_ context.Context) error {
+	cfg := config.AppConfig()
 	r := chi.NewRouter()
+
+	gatewayv1.HandlerWithOptions(a.service.Handler(), gatewayv1.ChiServerOptions{
+		BaseRouter: r,
+		Middlewares: []gatewayv1.MiddlewareFunc{
+			middleware.Auth(cfg.JWTSecret()),
+		},
+	})
 
 	a.router = r
 	return nil
