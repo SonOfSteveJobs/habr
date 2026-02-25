@@ -10,6 +10,8 @@ import (
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
 )
 
+// РЕШЕНИЕ С MIDDLEWARE СПОРНОЕ НО ВОЗМОЖНО ЕСЛИ НАДО НЕСКОЛЬКО ТОПИКОВ ОБРАБАТЫВАТЬ ТО ОНО ИМЕЕТ СМЫСЛ
+
 // Recovery - ловит панику, сообщение не будет помечено как прочитанное
 func Recovery(next kafka.MessageHandler) kafka.MessageHandler {
 	return func(ctx context.Context, msg kafka.Message) (err error) {

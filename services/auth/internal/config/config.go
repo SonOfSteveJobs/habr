@@ -8,31 +8,34 @@ import (
 )
 
 const (
-	defaultAccessTokenTTL  = 10 * time.Minute
-	defaultRefreshTokenTTL = 30 * 24 * time.Hour // 30 days
+	defaultAccessTokenTTL      = 10 * time.Minute
+	defaultRefreshTokenTTL     = 30 * 24 * time.Hour // 30 days
+	defaultVerificationCodeTTL = 15 * time.Minute
 )
 
 var appConfig *Config
 
 type Config struct {
-	grpcPort        string
-	dbURI           string
-	redisAddr       string
-	jwtSecret       string
-	accessTokenTTL  time.Duration
-	refreshTokenTTL time.Duration
-	logger          LoggerConfig
-	kafka           kafkaConfig
+	grpcPort            string
+	dbURI               string
+	redisAddr           string
+	jwtSecret           string
+	accessTokenTTL      time.Duration
+	refreshTokenTTL     time.Duration
+	verificationCodeTTL time.Duration
+	logger              LoggerConfig
+	kafka               KafkaConfig
 }
 
-func (c *Config) GRPCPort() string               { return c.grpcPort }
-func (c *Config) DBURI() string                  { return c.dbURI }
-func (c *Config) RedisAddr() string              { return c.redisAddr }
-func (c *Config) JWTSecret() string              { return c.jwtSecret }
-func (c *Config) AccessTokenTTL() time.Duration  { return c.accessTokenTTL }
-func (c *Config) RefreshTokenTTL() time.Duration { return c.refreshTokenTTL }
-func (c *Config) Logger() LoggerConfig           { return c.logger }
-func (c *Config) Kafka() kafkaConfig             { return c.kafka }
+func (c *Config) GRPCPort() string                   { return c.grpcPort }
+func (c *Config) DBURI() string                      { return c.dbURI }
+func (c *Config) RedisAddr() string                  { return c.redisAddr }
+func (c *Config) JWTSecret() string                  { return c.jwtSecret }
+func (c *Config) AccessTokenTTL() time.Duration      { return c.accessTokenTTL }
+func (c *Config) RefreshTokenTTL() time.Duration     { return c.refreshTokenTTL }
+func (c *Config) VerificationCodeTTL() time.Duration { return c.verificationCodeTTL }
+func (c *Config) Logger() LoggerConfig               { return c.logger }
+func (c *Config) Kafka() KafkaConfig                 { return c.kafka }
 
 func Load(path ...string) error {
 	err := godotenv.Load(path...)
@@ -81,20 +84,29 @@ func Load(path ...string) error {
 		}
 	}
 
+	verificationCodeTTL := defaultVerificationCodeTTL
+	if v := os.Getenv("VERIFICATION_CODE_TTL"); v != "" {
+		ttl, err := time.ParseDuration(v)
+		if nil == err {
+			verificationCodeTTL = ttl
+		}
+	}
+
 	kafka, err := newKafkaConfig()
 	if err != nil {
 		return err
 	}
 
 	appConfig = &Config{
-		grpcPort:        grpcPort,
-		dbURI:           dbURI,
-		redisAddr:       redisAddr,
-		jwtSecret:       jwtSecret,
-		accessTokenTTL:  accessTokenTTL,
-		refreshTokenTTL: refreshTokenTTL,
-		logger:          logger,
-		kafka:           kafka,
+		grpcPort:            grpcPort,
+		dbURI:               dbURI,
+		redisAddr:           redisAddr,
+		jwtSecret:           jwtSecret,
+		accessTokenTTL:      accessTokenTTL,
+		refreshTokenTTL:     refreshTokenTTL,
+		verificationCodeTTL: verificationCodeTTL,
+		logger:              logger,
+		kafka:               kafka,
 	}
 
 	return nil

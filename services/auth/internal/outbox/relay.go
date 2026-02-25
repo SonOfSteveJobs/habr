@@ -11,12 +11,6 @@ import (
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/model"
 )
 
-const (
-	pollInterval    = 2 * time.Second
-	cleanupInterval = 60 * time.Second
-	fetchLimit      = 100
-)
-
 type OutboxRepository interface {
 	FetchUnsent(ctx context.Context, limit int) ([]model.OutboxEvent, error)
 	MarkSent(ctx context.Context, eventID uuid.UUID) error
@@ -28,24 +22,30 @@ type Producer interface {
 }
 
 type Relay struct {
-	repo     OutboxRepository
-	producer Producer
+	repo            OutboxRepository
+	producer        Producer
+	pollInterval    time.Duration
+	cleanupInterval time.Duration
+	fetchLimit      int
 }
 
-func NewRelay(repo OutboxRepository, producer Producer) *Relay {
+func NewRelay(repo OutboxRepository, producer Producer, pollInterval, cleanupInterval time.Duration, fetchLimit int) *Relay {
 	return &Relay{
-		repo:     repo,
-		producer: producer,
+		repo:            repo,
+		producer:        producer,
+		pollInterval:    pollInterval,
+		cleanupInterval: cleanupInterval,
+		fetchLimit:      fetchLimit,
 	}
 }
 
 func (r *Relay) Run(ctx context.Context) {
 	log := logger.Logger()
 
-	pollTicker := time.NewTicker(pollInterval)
+	pollTicker := time.NewTicker(r.pollInterval)
 	defer pollTicker.Stop()
 
-	cleanupTicker := time.NewTicker(cleanupInterval)
+	cleanupTicker := time.NewTicker(r.cleanupInterval)
 	defer cleanupTicker.Stop()
 
 	log.Info().Msg("outbox relay started")
@@ -68,7 +68,7 @@ func (r *Relay) Run(ctx context.Context) {
 func (r *Relay) poll(ctx context.Context) {
 	log := logger.Logger()
 
-	events, err := r.repo.FetchUnsent(ctx, fetchLimit)
+	events, err := r.repo.FetchUnsent(ctx, r.fetchLimit)
 	if err != nil {
 		log.Error().Err(err).Msg("outbox: fetch unsent failed")
 		return

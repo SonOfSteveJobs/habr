@@ -35,6 +35,7 @@ func (r *Repository) Insert(ctx context.Context, event model.OutboxEvent) error 
 	return nil
 }
 
+// FOR UPDATE SKIP LOCKED - блокировка строк + скип заблокированных (возможность запустить несколько relay)
 func (r *Repository) FetchUnsent(ctx context.Context, limit int) ([]model.OutboxEvent, error) {
 	const query = `
 		SELECT event_id, topic, key, value, created_at
@@ -42,7 +43,6 @@ func (r *Repository) FetchUnsent(ctx context.Context, limit int) ([]model.Outbox
 		WHERE NOT is_sent
 		ORDER BY created_at
 		LIMIT $1
-		-- блокировка строк + скип заблокированных (возможность запустить несколько relay):
 		FOR UPDATE SKIP LOCKED
 	`
 

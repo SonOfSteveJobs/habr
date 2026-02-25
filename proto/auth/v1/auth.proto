@@ -16,6 +16,8 @@ service AuthService {
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
   // Logout - выход из системы
   rpc Logout(LogoutRequest) returns (LogoutResponse);
+  // VerifyEmail - подтверждение email пользователя
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
 }
 
 message RegisterRequest {
@@ -61,3 +63,12 @@ message LogoutRequest {
 }
 
 message LogoutResponse {}
+
+message VerifyEmailRequest {
+  // user_id - uuid идентификатор пользователя
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  // code - 6-значный код подтверждения
+  string code = 2 [(buf.validate.field).string = {min_len: 6, max_len: 6}];
+}
+
+message VerifyEmailResponse {}
