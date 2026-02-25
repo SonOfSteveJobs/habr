@@ -122,3 +122,8 @@ func validateJWT(token string, secret []byte) (*jwtPayload, error) {
 
 	return &payload, nil
 }
+
+// WithUserID - чисто для тестов
+func WithUserID(ctx context.Context, userID uuid.UUID) context.Context {
+	return context.WithValue(ctx, userIDKey, userID)
+}

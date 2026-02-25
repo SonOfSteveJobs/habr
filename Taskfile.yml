@@ -109,7 +109,13 @@ tasks:
     test:
         desc: "Запускает unit-тесты"
         cmds:
-            - go test ./services/... ./pkg/... -v
+            - go test -race ./services/... ./pkg/... -v
+
+    test-coverage:
+        desc: "Запускает unit-тесты с coverage и генерирует HTML-отчёт"
+        cmds:
+            - go test -race ./services/... ./pkg/... -coverprofile=coverage.out -covermode=atomic
+            - go tool cover -html=coverage.out -o coverage.html
 
     test-integration:
         desc: "Запускает интеграционные тесты (требует Docker)"
