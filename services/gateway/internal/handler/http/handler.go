@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 
+	articlev1 "github.com/SonOfSteveJobs/habr/pkg/gen/article/v1"
 	authv1 "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1"
 	gatewayv1 "github.com/SonOfSteveJobs/habr/pkg/gen/gateway/v1"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
@@ -12,11 +13,12 @@ import (
 
 type Handler struct {
 	gatewayv1.Unimplemented
-	authClient authv1.AuthServiceClient
+	authClient    authv1.AuthServiceClient
+	articleClient articlev1.ArticleServiceClient
 }
 
-func New(authClient authv1.AuthServiceClient) *Handler {
-	return &Handler{authClient: authClient}
+func New(authClient authv1.AuthServiceClient, articleClient articlev1.ArticleServiceClient) *Handler {
+	return &Handler{authClient: authClient, articleClient: articleClient}
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {

@@ -5,6 +5,8 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/SonOfSteveJobs/habr/pkg/logger"
 )
 
 func grpcToHTTP(code codes.Code) int {
@@ -25,6 +27,7 @@ func grpcToHTTP(code codes.Code) int {
 }
 
 func handleGRPCError(w http.ResponseWriter, r *http.Request, err error) {
+	log := logger.Logger()
 	st, ok := status.FromError(err)
 	if !ok {
 		writeError(w, r, http.StatusInternalServerError, "internal error")
@@ -32,4 +35,5 @@ func handleGRPCError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 
 	writeError(w, r, grpcToHTTP(st.Code()), st.Message())
+	log.Err(err).Msg("handleGRPC Error")
 }
