@@ -1,4 +1,4 @@
-package gatewayhttp
+package auth
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 
 	authv1 "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1"
 	gatewayv1 "github.com/SonOfSteveJobs/habr/pkg/gen/gateway/v1"
-
 	"github.com/SonOfSteveJobs/habr/services/gateway/internal/handler/middleware"
 )
 
@@ -23,7 +22,7 @@ func TestRegister_Success(t *testing.T) {
 			return &authv1.RegisterResponse{}, nil
 		},
 	}
-	h := newTestHandler(client, &mockArticleClient{})
+	h := newTestHandler(client)
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/register", `{"email":"user@example.com","password":"pass123"}`)
 	h.Register(w, r)
@@ -34,7 +33,7 @@ func TestRegister_Success(t *testing.T) {
 }
 
 func TestRegister_InvalidBody(t *testing.T) {
-	h := newTestHandler(&mockAuthClient{}, &mockArticleClient{})
+	h := newTestHandler(&mockAuthClient{})
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/register", `{invalid`)
 	h.Register(w, r)
@@ -50,7 +49,7 @@ func TestRegister_GRPCAlreadyExists(t *testing.T) {
 			return nil, status.Error(codes.AlreadyExists, "user already exists")
 		},
 	}
-	h := newTestHandler(client, &mockArticleClient{})
+	h := newTestHandler(client)
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/register", `{"email":"user@example.com","password":"pass123"}`)
 	h.Register(w, r)
@@ -69,7 +68,7 @@ func TestLogin_Success(t *testing.T) {
 			}, nil
 		},
 	}
-	h := newTestHandler(client, &mockArticleClient{})
+	h := newTestHandler(client)
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/login", `{"email":"user@example.com","password":"pass123"}`)
 	h.Login(w, r)
@@ -92,7 +91,7 @@ func TestLogin_Success(t *testing.T) {
 }
 
 func TestLogin_InvalidBody(t *testing.T) {
-	h := newTestHandler(&mockAuthClient{}, &mockArticleClient{})
+	h := newTestHandler(&mockAuthClient{})
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/login", `{invalid`)
 	h.Login(w, r)
@@ -108,7 +107,7 @@ func TestLogin_GRPCUnauthenticated(t *testing.T) {
 			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
 		},
 	}
-	h := newTestHandler(client, &mockArticleClient{})
+	h := newTestHandler(client)
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/login", `{"email":"user@example.com","password":"wrong"}`)
 	h.Login(w, r)
@@ -128,7 +127,7 @@ func TestRefreshToken_Success(t *testing.T) {
 			}, nil
 		},
 	}
-	h := newTestHandler(client, &mockArticleClient{})
+	h := newTestHandler(client)
 
 	body := `{"user_id":"` + userID.String() + `","refresh_token":"old-refresh"}`
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/refresh", body)
@@ -154,7 +153,7 @@ func TestRefreshToken_GRPCError(t *testing.T) {
 			return nil, status.Error(codes.Unauthenticated, "invalid refresh token")
 		},
 	}
-	h := newTestHandler(client, &mockArticleClient{})
+	h := newTestHandler(client)
 
 	body := `{"user_id":"` + userID.String() + `","refresh_token":"bad-token"}`
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/refresh", body)
@@ -172,7 +171,7 @@ func TestLogout_Success(t *testing.T) {
 			return &authv1.LogoutResponse{}, nil
 		},
 	}
-	h := newTestHandler(client, &mockArticleClient{})
+	h := newTestHandler(client)
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/logout", "")
 	ctx := middleware.WithUserID(r.Context(), userID)
@@ -186,7 +185,7 @@ func TestLogout_Success(t *testing.T) {
 }
 
 func TestLogout_NoUserID(t *testing.T) {
-	h := newTestHandler(&mockAuthClient{}, &mockArticleClient{})
+	h := newTestHandler(&mockAuthClient{})
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/logout", "")
 	h.Logout(w, r)
@@ -203,7 +202,7 @@ func TestLogout_GRPCError(t *testing.T) {
 			return nil, status.Error(codes.Internal, "redis error")
 		},
 	}
-	h := newTestHandler(client, &mockArticleClient{})
+	h := newTestHandler(client)
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/logout", "")
 	ctx := middleware.WithUserID(r.Context(), userID)
@@ -223,7 +222,7 @@ func TestVerifyEmail_Success(t *testing.T) {
 			return &authv1.VerifyEmailResponse{}, nil
 		},
 	}
-	h := newTestHandler(client, &mockArticleClient{})
+	h := newTestHandler(client)
 
 	body := `{"user_id":"` + userID.String() + `","code":"123456"}`
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/verify-email", body)
@@ -241,7 +240,7 @@ func TestVerifyEmail_GRPCError(t *testing.T) {
 			return nil, status.Error(codes.InvalidArgument, "invalid code")
 		},
 	}
-	h := newTestHandler(client, &mockArticleClient{})
+	h := newTestHandler(client)
 
 	body := `{"user_id":"` + userID.String() + `","code":"000000"}`
 	w, r := makeRequest(http.MethodPost, "/api/v1/auth/verify-email", body)

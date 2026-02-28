@@ -4,6 +4,8 @@ import (
 	articlev1 "github.com/SonOfSteveJobs/habr/pkg/gen/article/v1"
 	authv1 "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1"
 	gatewayhttp "github.com/SonOfSteveJobs/habr/services/gateway/internal/handler/http"
+	"github.com/SonOfSteveJobs/habr/services/gateway/internal/handler/http/article"
+	"github.com/SonOfSteveJobs/habr/services/gateway/internal/handler/http/auth"
 )
 
 type serviceContainer struct {
@@ -36,7 +38,10 @@ func (c *serviceContainer) ArticleClient() articlev1.ArticleServiceClient {
 
 func (c *serviceContainer) Handler() *gatewayhttp.Handler {
 	if c.handler == nil {
-		c.handler = gatewayhttp.New(c.AuthClient(), c.ArticleClient())
+		c.handler = gatewayhttp.New(
+			auth.New(c.AuthClient()),
+			article.New(c.ArticleClient()),
+		)
 	}
 
 	return c.handler

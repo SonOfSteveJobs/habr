@@ -1,4 +1,4 @@
-package gatewayhttp
+package article
 
 import (
 	"context"
@@ -42,7 +42,7 @@ func TestCreateArticle_Success(t *testing.T) {
 			}, nil
 		},
 	}
-	h := newTestHandler(&mockAuthClient{}, client)
+	h := newTestHandler(client)
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/articles", `{"title":"Test Title","content":"Test Content"}`)
 	ctx := middleware.WithUserID(r.Context(), userID)
@@ -68,7 +68,7 @@ func TestCreateArticle_Success(t *testing.T) {
 }
 
 func TestCreateArticle_NoAuth(t *testing.T) {
-	h := newTestHandler(&mockAuthClient{}, &mockArticleClient{})
+	h := newTestHandler(&mockArticleClient{})
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/articles", `{"title":"Test","content":"Test"}`)
 	h.CreateArticle(w, r)
@@ -80,7 +80,7 @@ func TestCreateArticle_NoAuth(t *testing.T) {
 
 func TestCreateArticle_InvalidBody(t *testing.T) {
 	userID := uuid.Must(uuid.NewV7())
-	h := newTestHandler(&mockAuthClient{}, &mockArticleClient{})
+	h := newTestHandler(&mockArticleClient{})
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/articles", `{invalid`)
 	ctx := middleware.WithUserID(r.Context(), userID)
@@ -100,7 +100,7 @@ func TestCreateArticle_GRPCError(t *testing.T) {
 			return nil, status.Error(codes.InvalidArgument, "title is required")
 		},
 	}
-	h := newTestHandler(&mockAuthClient{}, client)
+	h := newTestHandler(client)
 
 	w, r := makeRequest(http.MethodPost, "/api/v1/articles", `{"title":"","content":"Test"}`)
 	ctx := middleware.WithUserID(r.Context(), userID)

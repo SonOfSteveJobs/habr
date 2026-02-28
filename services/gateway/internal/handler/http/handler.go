@@ -1,48 +1,23 @@
 package gatewayhttp
 
 import (
-	"encoding/json"
-	"io"
-	"net/http"
+	"github.com/SonOfSteveJobs/habr/services/gateway/internal/handler/http/article"
+	"github.com/SonOfSteveJobs/habr/services/gateway/internal/handler/http/auth"
+)
 
-	articlev1 "github.com/SonOfSteveJobs/habr/pkg/gen/article/v1"
-	authv1 "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1"
-	gatewayv1 "github.com/SonOfSteveJobs/habr/pkg/gen/gateway/v1"
-	"github.com/SonOfSteveJobs/habr/pkg/logger"
+type (
+	ArticleHandler = article.Handler
+	AuthHandler    = auth.Handler
 )
 
 type Handler struct {
-	gatewayv1.Unimplemented
-	authClient    authv1.AuthServiceClient
-	articleClient articlev1.ArticleServiceClient
+	*ArticleHandler
+	*AuthHandler
 }
 
-func New(authClient authv1.AuthServiceClient, articleClient articlev1.ArticleServiceClient) *Handler {
-	return &Handler{authClient: authClient, articleClient: articleClient}
-}
-
-func writeJSON(w http.ResponseWriter, code int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(v)
-}
-
-func writeError(w http.ResponseWriter, r *http.Request, code int, msg string) {
-	log := logger.Ctx(r.Context())
-
-	if code >= http.StatusInternalServerError {
-		log.Error().Int("status", code).Str("error", msg).Msg("request error")
-	} else if code >= http.StatusBadRequest {
-		log.Warn().Int("status", code).Str("error", msg).Msg("request error")
+func New(authHandler *auth.Handler, articleHandler *article.Handler) *Handler {
+	return &Handler{
+		ArticleHandler: articleHandler,
+		AuthHandler:    authHandler,
 	}
-
-	writeJSON(w, code, gatewayv1.ErrorResponse{Error: &msg})
-}
-
-func decodeBody(r *http.Request, v any) error {
-	r.Body = http.MaxBytesReader(nil, r.Body, 1<<20)
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(r.Body)
-	return json.NewDecoder(r.Body).Decode(v)
 }

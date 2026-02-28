@@ -1,4 +1,4 @@
-package gatewayhttp
+package httputil
 
 import (
 	"net/http"

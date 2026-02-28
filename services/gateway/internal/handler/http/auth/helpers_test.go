@@ -1,4 +1,4 @@
-package gatewayhttp
+package auth
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	articlev1 "github.com/SonOfSteveJobs/habr/pkg/gen/article/v1"
 	authv1 "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1"
 )
 
@@ -40,36 +39,8 @@ func (m *mockAuthClient) VerifyEmail(ctx context.Context, in *authv1.VerifyEmail
 	return m.verifyEmailFn(ctx, in, opts...)
 }
 
-type mockArticleClient struct {
-	createArticleFn func(ctx context.Context, in *articlev1.CreateArticleRequest, opts ...grpc.CallOption) (*articlev1.CreateArticleResponse, error)
-	getArticleFn    func(ctx context.Context, in *articlev1.GetArticleRequest, opts ...grpc.CallOption) (*articlev1.GetArticleResponse, error)
-	updateArticleFn func(ctx context.Context, in *articlev1.UpdateArticleRequest, opts ...grpc.CallOption) (*articlev1.UpdateArticleResponse, error)
-	deleteArticleFn func(ctx context.Context, in *articlev1.DeleteArticleRequest, opts ...grpc.CallOption) (*articlev1.DeleteArticleResponse, error)
-	listArticlesFn  func(ctx context.Context, in *articlev1.ListArticlesRequest, opts ...grpc.CallOption) (*articlev1.ListArticlesResponse, error)
-}
-
-func (m *mockArticleClient) CreateArticle(ctx context.Context, in *articlev1.CreateArticleRequest, opts ...grpc.CallOption) (*articlev1.CreateArticleResponse, error) {
-	return m.createArticleFn(ctx, in, opts...)
-}
-
-func (m *mockArticleClient) GetArticle(ctx context.Context, in *articlev1.GetArticleRequest, opts ...grpc.CallOption) (*articlev1.GetArticleResponse, error) {
-	return m.getArticleFn(ctx, in, opts...)
-}
-
-func (m *mockArticleClient) UpdateArticle(ctx context.Context, in *articlev1.UpdateArticleRequest, opts ...grpc.CallOption) (*articlev1.UpdateArticleResponse, error) {
-	return m.updateArticleFn(ctx, in, opts...)
-}
-
-func (m *mockArticleClient) DeleteArticle(ctx context.Context, in *articlev1.DeleteArticleRequest, opts ...grpc.CallOption) (*articlev1.DeleteArticleResponse, error) {
-	return m.deleteArticleFn(ctx, in, opts...)
-}
-
-func (m *mockArticleClient) ListArticles(ctx context.Context, in *articlev1.ListArticlesRequest, opts ...grpc.CallOption) (*articlev1.ListArticlesResponse, error) {
-	return m.listArticlesFn(ctx, in, opts...)
-}
-
-func newTestHandler(authClient *mockAuthClient, articleClient *mockArticleClient) *Handler {
-	return New(authClient, articleClient)
+func newTestHandler(client *mockAuthClient) *Handler {
+	return New(client)
 }
 
 func makeRequest(method, path, body string) (*httptest.ResponseRecorder, *http.Request) {
