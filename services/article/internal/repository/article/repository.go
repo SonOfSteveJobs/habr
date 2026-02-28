@@ -2,8 +2,10 @@ package article
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/SonOfSteveJobs/habr/pkg/transaction"
@@ -82,6 +84,53 @@ func (r *Repository) List(ctx context.Context, cursor string, limit int) (*model
 	}
 
 	return page, nil
+}
+
+func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*model.Article, error) {
+	const query = `
+		SELECT id, author_id, title, content, created_at, updated_at
+		FROM articles WHERE id = $1
+	`
+
+	var a model.Article
+	err := r.txManager.ExtractExecutor(ctx).QueryRow(ctx, query, id).
+		Scan(&a.ID, &a.AuthorID, &a.Title, &a.Content, &a.CreatedAt, &a.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, model.ErrArticleNotFound
+		}
+		return nil, fmt.Errorf("get article by id: %w", err)
+	}
+
+	return &a, nil
+}
+
+func (r *Repository) Update(ctx context.Context, article *model.Article) error {
+	const query = `
+		UPDATE articles SET title = $1, content = $2, updated_at = NOW()
+		WHERE id = $3 AND author_id = $4
+		RETURNING updated_at
+	`
+
+	return r.txManager.ExtractExecutor(ctx).QueryRow(
+		ctx, query,
+		article.Title, article.Content, article.ID, article.AuthorID,
+	).Scan(&article.UpdatedAt)
+}
+
+func (r *Repository) Delete(ctx context.Context, id, authorId uuid.UUID) error {
+	const query = `DELETE FROM articles WHERE id = $1 AND author_id = $2`
+
+	ct, err := r.txManager.ExtractExecutor(ctx).Exec(ctx, query, id, authorId)
+	if err != nil {
+		return fmt.Errorf("delete article: %w", err)
+	}
+
+	if ct.RowsAffected() == 0 {
+		return model.ErrArticleNotFound
+	}
+
+	return nil
 }
 
 func scanArticles(rows pgx.Rows, capacity int) ([]*model.Article, error) {

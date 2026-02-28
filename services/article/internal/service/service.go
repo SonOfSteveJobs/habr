@@ -3,12 +3,17 @@ package service
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/SonOfSteveJobs/habr/services/article/internal/model"
 )
 
 type ArticleRepository interface {
 	Create(ctx context.Context, article *model.Article) error
 	List(ctx context.Context, cursor string, limit int) (*model.ArticlePage, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Article, error)
+	Update(ctx context.Context, article *model.Article) error
+	Delete(ctx context.Context, id, authorId uuid.UUID) error
 }
 
 type CacheRepository interface {

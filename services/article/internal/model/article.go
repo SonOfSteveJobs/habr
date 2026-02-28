@@ -50,6 +50,30 @@ func NewArticle(authorID uuid.UUID, title, content string) (*Article, error) {
 	}, nil
 }
 
+func (a *Article) Update(id, authorID uuid.UUID, title, content *string) error {
+	// эти поля точно есть
+	a.ID = id
+	a.AuthorID = authorID
+
+	if title != nil {
+		titleLen := utf8.RuneCountInString(*title)
+		if titleLen < titleMinLen || titleLen > titleMaxLen {
+			return ErrInvalidTitle
+		}
+		a.Title = *title
+	}
+
+	if content != nil {
+		contentLen := utf8.RuneCountInString(*content)
+		if contentLen < contentMinLen || contentLen > contentMaxLen {
+			return ErrInvalidContent
+		}
+		a.Content = *content
+	}
+
+	return nil
+}
+
 type ArticlePage struct {
 	Articles   []*Article
 	NextCursor string

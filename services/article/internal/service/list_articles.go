@@ -16,7 +16,7 @@ func (s *Service) ListArticles(ctx context.Context, cursor string, limit int32) 
 		l = defaultLimit
 	}
 
-	isFirstPage := cursor == ""
+	isFirstPage := cursor == "" && limit == defaultLimit
 
 	if isFirstPage {
 		page, err := s.cacheRepo.Get(ctx)

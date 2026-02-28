@@ -7,4 +7,5 @@ var (
 	ErrInvalidTitle    = errors.New("invalid title")
 	ErrInvalidContent  = errors.New("invalid content")
 	ErrInvalidCursor   = errors.New("invalid cursor")
+	ErrNotAuthor       = errors.New("not the author")
 )

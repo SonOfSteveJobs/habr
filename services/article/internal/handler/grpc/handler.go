@@ -15,6 +15,9 @@ import (
 type ArticleService interface {
 	CreateArticle(ctx context.Context, authorID uuid.UUID, title, content string) (*model.Article, error)
 	ListArticles(ctx context.Context, cursor string, limit int32) (*model.ArticlePage, error)
+	GetArticle(ctx context.Context, id uuid.UUID) (*model.Article, error)
+	UpdateArticle(ctx context.Context, id, authorID uuid.UUID, title, content *string) (*model.Article, error)
+	DeleteArticle(ctx context.Context, id, authorID uuid.UUID) error
 }
 
 type Handler struct {
@@ -57,6 +60,61 @@ func (h *Handler) ListArticles(ctx context.Context, req *articlev1.ListArticlesR
 		Articles:   articles,
 		NextCursor: page.NextCursor,
 	}, nil
+}
+
+func (h *Handler) GetArticle(ctx context.Context, req *articlev1.GetArticleRequest) (*articlev1.GetArticleResponse, error) {
+	id, err := uuid.Parse(req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid id")
+	}
+
+	article, err := h.articleService.GetArticle(ctx, id)
+	if err != nil {
+		return nil, getArticleError(ctx, err)
+	}
+
+	return &articlev1.GetArticleResponse{
+		Article: toProtoArticle(article),
+	}, nil
+}
+
+func (h *Handler) UpdateArticle(ctx context.Context, req *articlev1.UpdateArticleRequest) (*articlev1.UpdateArticleResponse, error) {
+	id, err := uuid.Parse(req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid id")
+	}
+
+	authorID, err := uuid.Parse(req.GetAuthorId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid author_id")
+	}
+
+	article, err := h.articleService.UpdateArticle(ctx, id, authorID, req.Title, req.Content)
+	if err != nil {
+		return nil, updateArticleError(ctx, err)
+	}
+
+	return &articlev1.UpdateArticleResponse{
+		Article: toProtoArticle(article),
+	}, nil
+}
+
+func (h *Handler) DeleteArticle(ctx context.Context, req *articlev1.DeleteArticleRequest) (*articlev1.DeleteArticleResponse, error) {
+	id, err := uuid.Parse(req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid id")
+	}
+
+	authorID, err := uuid.Parse(req.GetAuthorId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid author_id")
+	}
+
+	if err := h.articleService.DeleteArticle(ctx, id, authorID); err != nil {
+		return nil, deleteArticleError(ctx, err)
+	}
+
+	return &articlev1.DeleteArticleResponse{}, nil
 }
 
 func toProtoArticle(a *model.Article) *articlev1.Article {
