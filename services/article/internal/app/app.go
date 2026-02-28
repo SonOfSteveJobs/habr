@@ -91,7 +91,7 @@ func (a *App) initGRPCServer(_ context.Context) error {
 	a.grpcServer = grpc.NewServer(
 		grpc.UnaryInterceptor(grpcvalidate.UnaryInterceptor()),
 	)
-	articlev1.RegisterArticleServiceServer(a.grpcServer, nil)
+	articlev1.RegisterArticleServiceServer(a.grpcServer, a.service.Handler())
 	reflection.Register(a.grpcServer)
 	closer.AddNamed("gRPC server", func(_ context.Context) error {
 		a.grpcServer.GracefulStop()
