@@ -93,6 +93,54 @@ func TestCreateArticle_EmptyContent(t *testing.T) {
 	}
 }
 
+func TestCreateArticle_ContentTooLong(t *testing.T) {
+	repo := &mockArticleRepo{
+		createFn: func(_ context.Context, _ *model.Article) error { return nil },
+	}
+	svc := newTestService(repo)
+
+	longContent := strings.Repeat("a", 50001)
+	_, err := svc.CreateArticle(context.Background(), uuid.Must(uuid.NewV7()), "title", longContent)
+	if !errors.Is(err, model.ErrInvalidContent) {
+		t.Errorf("error = %v, want ErrInvalidContent", err)
+	}
+
+	if repo.createCalled {
+		t.Error("repo.Create was called, want skipped on long content")
+	}
+}
+
+func TestCreateArticle_UTF8Title(t *testing.T) {
+	repo := &mockArticleRepo{
+		createFn: func(_ context.Context, _ *model.Article) error { return nil },
+	}
+	svc := newTestService(repo)
+
+	// 255 кириллических символов — каждый 2 байта, len() вернёт 510, но utf8.RuneCount = 255
+	title := strings.Repeat("я", 255)
+	article, err := svc.CreateArticle(context.Background(), uuid.Must(uuid.NewV7()), title, "content")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if article.Title != title {
+		t.Errorf("article.Title length = %d runes, want 255", len([]rune(article.Title)))
+	}
+}
+
+func TestCreateArticle_UTF8TitleTooLong(t *testing.T) {
+	repo := &mockArticleRepo{
+		createFn: func(_ context.Context, _ *model.Article) error { return nil },
+	}
+	svc := newTestService(repo)
+
+	title := strings.Repeat("я", 256)
+	_, err := svc.CreateArticle(context.Background(), uuid.Must(uuid.NewV7()), title, "content")
+	if !errors.Is(err, model.ErrInvalidTitle) {
+		t.Errorf("error = %v, want ErrInvalidTitle", err)
+	}
+}
+
 func TestCreateArticle_RepoError(t *testing.T) {
 	repoErr := errors.New("connection refused")
 	repo := &mockArticleRepo{

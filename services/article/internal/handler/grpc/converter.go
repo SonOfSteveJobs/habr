@@ -24,3 +24,15 @@ func createArticleError(ctx context.Context, err error) error {
 		return status.Error(codes.Internal, "internal error")
 	}
 }
+
+func listArticlesError(ctx context.Context, err error) error {
+	switch {
+	case errors.Is(err, model.ErrInvalidCursor):
+		return status.Error(codes.InvalidArgument, "invalid cursor")
+	default:
+		log := logger.Ctx(ctx)
+		log.Error().Err(err).Msg("list articles: internal error")
+
+		return status.Error(codes.Internal, "internal error")
+	}
+}

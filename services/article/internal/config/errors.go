@@ -9,4 +9,5 @@ var (
 	ErrLoggerLevelNotProvided  = errors.New("LOGGER_LEVEL is not provided")
 	ErrLoggerAsJsonNotProvided = errors.New("LOGGER_AS_JSON is not provided")
 	ErrLoggerAsJsonInvalid     = errors.New("LOGGER_AS_JSON must be true or false")
+	ErrInvalidCacheTTL         = errors.New("CACHE_ARTICLES_TTL is not a valid duration")
 )

@@ -8,6 +8,13 @@ import (
 
 type ArticleRepository interface {
 	Create(ctx context.Context, article *model.Article) error
+	List(ctx context.Context, cursor string, limit int) (*model.ArticlePage, error)
+}
+
+type CacheRepository interface {
+	Get(ctx context.Context) (*model.ArticlePage, error)
+	Set(ctx context.Context, page *model.ArticlePage) error
+	Invalidate(ctx context.Context) error
 }
 
 type TxManager interface {
@@ -16,12 +23,14 @@ type TxManager interface {
 
 type Service struct {
 	articleRepo ArticleRepository
+	cacheRepo   CacheRepository
 	txManager   TxManager
 }
 
-func New(articleRepo ArticleRepository, txManager TxManager) *Service {
+func New(articleRepo ArticleRepository, cacheRepo CacheRepository, txManager TxManager) *Service {
 	return &Service{
 		articleRepo: articleRepo,
+		cacheRepo:   cacheRepo,
 		txManager:   txManager,
 	}
 }

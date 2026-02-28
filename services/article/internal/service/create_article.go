@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/SonOfSteveJobs/habr/pkg/logger"
 	"github.com/SonOfSteveJobs/habr/services/article/internal/model"
 )
 
@@ -17,6 +18,11 @@ func (s *Service) CreateArticle(ctx context.Context, authorID uuid.UUID, title, 
 
 	if err := s.articleRepo.Create(ctx, article); err != nil {
 		return nil, fmt.Errorf("save article: %w", err)
+	}
+
+	if err := s.cacheRepo.Invalidate(ctx); err != nil {
+		log := logger.Ctx(ctx)
+		log.Warn().Err(err).Msg("cache invalidate failed")
 	}
 
 	return article, nil

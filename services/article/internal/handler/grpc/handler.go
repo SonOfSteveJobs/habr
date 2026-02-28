@@ -14,6 +14,7 @@ import (
 
 type ArticleService interface {
 	CreateArticle(ctx context.Context, authorID uuid.UUID, title, content string) (*model.Article, error)
+	ListArticles(ctx context.Context, cursor string, limit int32) (*model.ArticlePage, error)
 }
 
 type Handler struct {
@@ -37,13 +38,34 @@ func (h *Handler) CreateArticle(ctx context.Context, req *articlev1.CreateArticl
 	}
 
 	return &articlev1.CreateArticleResponse{
-		Article: &articlev1.Article{
-			Id:        article.ID.String(),
-			AuthorId:  article.AuthorID.String(),
-			Title:     article.Title,
-			Content:   article.Content,
-			CreatedAt: timestamppb.New(article.CreatedAt),
-			UpdatedAt: timestamppb.New(article.UpdatedAt),
-		},
+		Article: toProtoArticle(article),
 	}, nil
+}
+
+func (h *Handler) ListArticles(ctx context.Context, req *articlev1.ListArticlesRequest) (*articlev1.ListArticlesResponse, error) {
+	page, err := h.articleService.ListArticles(ctx, req.GetCursor(), req.GetLimit())
+	if err != nil {
+		return nil, listArticlesError(ctx, err)
+	}
+
+	articles := make([]*articlev1.Article, len(page.Articles))
+	for i, a := range page.Articles {
+		articles[i] = toProtoArticle(a)
+	}
+
+	return &articlev1.ListArticlesResponse{
+		Articles:   articles,
+		NextCursor: page.NextCursor,
+	}, nil
+}
+
+func toProtoArticle(a *model.Article) *articlev1.Article {
+	return &articlev1.Article{
+		Id:        a.ID.String(),
+		AuthorId:  a.AuthorID.String(),
+		Title:     a.Title,
+		Content:   a.Content,
+		CreatedAt: timestamppb.New(a.CreatedAt),
+		UpdatedAt: timestamppb.New(a.UpdatedAt),
+	}
 }
