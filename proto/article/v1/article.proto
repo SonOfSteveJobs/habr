@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package article.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/SonOfSteveJobs/habr/pkg/gen/article/v1;articlev1";
+
+// ArticleService - API для работы со статьями
+service ArticleService {
+  // CreateArticle - создание новой статьи
+  rpc CreateArticle(CreateArticleRequest) returns (CreateArticleResponse);
+  // GetArticle - получение статьи по id
+  rpc GetArticle(GetArticleRequest) returns (GetArticleResponse);
+  // UpdateArticle - обновление статьи
+  rpc UpdateArticle(UpdateArticleRequest) returns (UpdateArticleResponse);
+  // DeleteArticle - удаление статьи
+  rpc DeleteArticle(DeleteArticleRequest) returns (DeleteArticleResponse);
+  // ListArticles - получение списка статей с курсорной пагинацией
+  rpc ListArticles(ListArticlesRequest) returns (ListArticlesResponse);
+}
+
+// Article - полная модель статьи
+message Article {
+  // id - uuid идентификатор статьи
+  string id = 1;
+  // author_id - uuid идентификатор автора
+  string author_id = 2;
+  // title - заголовок статьи
+  string title = 3;
+  // content - содержимое статьи
+  string content = 4;
+  // created_at - дата создания
+  google.protobuf.Timestamp created_at = 5;
+  // updated_at - дата последнего обновления
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreateArticleRequest {
+  // author_id - uuid идентификатор автора (из JWT)
+  string author_id = 1 [(buf.validate.field).string.uuid = true];
+  // title - заголовок статьи
+  string title = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  // content - содержимое статьи
+  string content = 3 [(buf.validate.field).string.min_len = 1];
+}
+
+message CreateArticleResponse {
+  // article - созданная статья
+  Article article = 1;
+}
+
+message GetArticleRequest {
+  // id - uuid идентификатор статьи
+  string id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message GetArticleResponse {
+  // article - найденная статья
+  Article article = 1;
+}
+
+message UpdateArticleRequest {
+  // id - uuid идентификатор статьи
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // author_id - uuid идентификатор автора (для проверки авторства)
+  string author_id = 2 [(buf.validate.field).string.uuid = true];
+  // title - новый заголовок статьи
+  optional string title = 3;
+  // content - новое содержимое статьи
+  optional string content = 4;
+}
+
+message UpdateArticleResponse {
+  // article - обновлённая статья
+  Article article = 1;
+}
+
+message DeleteArticleRequest {
+  // id - uuid идентификатор статьи
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // author_id - uuid идентификатор автора (для проверки авторства)
+  string author_id = 2 [(buf.validate.field).string.uuid = true];
+}
+
+message DeleteArticleResponse {}
+
+message ListArticlesRequest {
+  // cursor - курсор для пагинации
+  string cursor = 1;
+  // limit - количество статей на странице
+  int32 limit = 2;
+}
+
+message ListArticlesResponse {
+  // articles - список статей
+  repeated Article articles = 1;
+  // next_cursor - курсор для следующей страницы
+  string next_cursor = 2;
+}

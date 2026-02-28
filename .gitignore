@@ -27,3 +27,4 @@ Thumbs.db
 # Generated
 gen/
 /cmd
+coverage.*

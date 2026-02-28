@@ -1,0 +1,525 @@
+openapi: 3.0.3
+
+info:
+  title: Habr Gateway API
+  description: |
+    Единая точка входа. Принимает HTTP/JSON от клиента, маршрутизирует в микросервисы по gRPC.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Регистрация, логин, токены, подтверждение email
+  - name: Articles
+    description: CRUD статей
+
+paths:
+  #Auth
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Регистрация пользователя
+      description: |
+        Создаёт пользователя и отправляет код подтверждения email
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Пользователь создан, письмо с кодом отправлено
+        "400":
+          description: Невалидный email или пароль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalid_email:
+                  value:
+                    error: "invalid email"
+                invalid_password:
+                  value:
+                    error: "invalid password"
+        "409":
+          description: Пользователь с таким email уже существует
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "user already exists"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/auth/login:
+
+    post:
+      tags: [Auth]
+      summary: Логин
+      description: Проверяет credentials, возвращает пару access + refresh токенов.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Успешный логин
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPairResponse"
+        "401":
+          description: Неверный email или пароль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "invalid credentials"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Обновление токенов
+      description: |
+        Token rotation: валидирует старый refresh token, удаляет его, выдаёт новую пару.
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: Новая пара токенов
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPairResponse"
+        "401":
+          description: Невалидный refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "invalid refresh token"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Логаут
+      description: Удаляет refresh token пользователя из Redis (логаут)
+      operationId: logout
+      security:
+        - Bearer: []
+      responses:
+        "200":
+          description: Успешный логаут
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Подтверждение email
+      description: |
+        Валидирует 6-значный код отправленный на почту
+      operationId: verifyEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyEmailRequest"
+      responses:
+        "200":
+          description: Email подтверждён
+        "400":
+          description: Невалидный код подтверждения
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "invalid verification code"
+        "404":
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "user not found"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # Articles
+
+  /api/v1/articles:
+    get:
+      tags: [Articles]
+      summary: Список статей
+      operationId: listArticles
+      parameters:
+        - name: cursor
+          in: query
+          description: Курсор для следующей страницы (из поля `next_cursor` предыдущего ответа)
+          schema:
+            type: string
+            example: "MjAyNS0wMi0yNVQxMDowMDowMFo6MDFiNGUyOGUtN2Y="
+        - name: limit
+          in: query
+          description: Количество статей на странице
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Список статей
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleListResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Articles]
+      summary: Создание статьи
+      operationId: createArticle
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateArticleRequest"
+      responses:
+        "201":
+          description: Статья создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleResponse"
+        "400":
+          description: Невалидные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/articles/{id}:
+    get:
+      tags: [Articles]
+      summary: Получение статьи
+      operationId: getArticle
+      parameters:
+        - $ref: "#/components/parameters/ArticleID"
+      responses:
+        "200":
+          description: Статья
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleResponse"
+        "404":
+          description: Статья не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "article not found"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      tags: [Articles]
+      summary: Обновление статьи
+      operationId: updateArticle
+      security:
+        - Bearer: []
+      parameters:
+        - $ref: "#/components/parameters/ArticleID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateArticleRequest"
+      responses:
+        "200":
+          description: Статья обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleResponse"
+        "400":
+          description: Невалидные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Нет прав на редактирование
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "forbidden"
+        "404":
+          description: Статья не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Articles]
+      summary: Удаление статьи
+      operationId: deleteArticle
+      security:
+        - Bearer: []
+      parameters:
+        - $ref: "#/components/parameters/ArticleID"
+      responses:
+        "200":
+          description: Статья удалена
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Нет прав на удаление
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "forbidden"
+        "404":
+          description: Статья не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Access token (HS256 JWT).
+
+        Claims: `sub` (user_id UUID), `iat`, `exp`.
+
+  parameters:
+    ArticleID:
+      name: id
+      in: path
+      required: true
+      description: UUID статьи
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Отсутствует или невалидный access token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "unauthorized"
+    InternalError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "internal error"
+
+  schemas:
+    # Auth
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 1
+          maxLength: 20
+          pattern: "^[a-zA-Z0-9]+$"
+          description: Только буквы и цифры, 1–20 символов
+          example: "Password123"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 1
+          maxLength: 20
+          example: "Password123"
+
+    RefreshTokenRequest:
+      type: object
+      required: [user_id, refresh_token]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          example: "01b4e28e-7f3a-7000-8000-000000000001"
+        refresh_token:
+          type: string
+          minLength: 1
+          example: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+
+    VerifyEmailRequest:
+      type: object
+      required: [user_id, code]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          example: "01b4e28e-7f3a-7000-8000-000000000001"
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: "^[0-9]{6}$"
+          description: 6-значный код из письма
+          example: "482901"
+
+    TokenPairResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT HS256, TTL 10 минут
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          description: 32 байта crypto/rand, base64url, TTL 30 дней
+          example: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+
+    # Articles
+
+    CreateArticleRequest:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Название"
+        content:
+          type: string
+          minLength: 1
+          example: "Контент статьи"
+
+    UpdateArticleRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Новое Название"
+        content:
+          type: string
+          minLength: 1
+          example: "Обновлённый контент статьи"
+
+    ArticleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "01b4e28e-7f3a-7000-8000-000000000002"
+        author_id:
+          type: string
+          format: uuid
+          example: "01b4e28e-7f3a-7000-8000-000000000001"
+        title:
+          type: string
+          example: "Название"
+        content:
+          type: string
+          example: "контент статьи"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-02-25T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-02-25T12:30:00Z"
+
+    ArticleListResponse:
+      type: object
+      properties:
+        articles:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArticleResponse"
+        next_cursor:
+          type: string
+          nullable: true
+          description: Курсор для следующей страницы. `null` если это последняя страница.
+          example: "MjAyNS0wMi0yNVQxMDowMDowMFo6MDFiNGUyOGUtN2Y="
+
+    # Common
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "invalid request"
