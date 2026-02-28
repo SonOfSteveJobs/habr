@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/SonOfSteveJobs/habr/services/article/internal/model"
 )
 
@@ -12,6 +14,15 @@ type mockArticleRepo struct {
 
 	listFn     func(ctx context.Context, cursor string, limit int) (*model.ArticlePage, error)
 	listCalled bool
+
+	getByIDFn     func(ctx context.Context, id uuid.UUID) (*model.Article, error)
+	getByIDCalled bool
+
+	updateFn     func(ctx context.Context, article *model.Article) error
+	updateCalled bool
+
+	deleteFn     func(ctx context.Context, id, authorID uuid.UUID) error
+	deleteCalled bool
 }
 
 func (m *mockArticleRepo) Create(ctx context.Context, article *model.Article) error {
@@ -22,6 +33,21 @@ func (m *mockArticleRepo) Create(ctx context.Context, article *model.Article) er
 func (m *mockArticleRepo) List(ctx context.Context, cursor string, limit int) (*model.ArticlePage, error) {
 	m.listCalled = true
 	return m.listFn(ctx, cursor, limit)
+}
+
+func (m *mockArticleRepo) GetByID(ctx context.Context, id uuid.UUID) (*model.Article, error) {
+	m.getByIDCalled = true
+	return m.getByIDFn(ctx, id)
+}
+
+func (m *mockArticleRepo) Update(ctx context.Context, article *model.Article) error {
+	m.updateCalled = true
+	return m.updateFn(ctx, article)
+}
+
+func (m *mockArticleRepo) Delete(ctx context.Context, id, authorID uuid.UUID) error {
+	m.deleteCalled = true
+	return m.deleteFn(ctx, id, authorID)
 }
 
 type mockCacheRepo struct {
