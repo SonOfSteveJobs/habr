@@ -5,7 +5,7 @@ import (
 
 	articlev1 "github.com/SonOfSteveJobs/habr/pkg/gen/article/v1"
 	gatewayv1 "github.com/SonOfSteveJobs/habr/pkg/gen/gateway/v1"
-	"github.com/SonOfSteveJobs/habr/services/gateway/internal/handler/http/httputil"
+	"github.com/SonOfSteveJobs/habr/services/gateway/internal/handler/http/utils"
 )
 
 func (h *Handler) ListArticles(w http.ResponseWriter, r *http.Request, params gatewayv1.ListArticlesParams) {
@@ -19,7 +19,7 @@ func (h *Handler) ListArticles(w http.ResponseWriter, r *http.Request, params ga
 
 	resp, err := h.client.ListArticles(r.Context(), req)
 	if err != nil {
-		httputil.HandleGRPCError(w, r, err)
+		utils.HandleGRPCError(w, r, err)
 		return
 	}
 
@@ -27,14 +27,14 @@ func (h *Handler) ListArticles(w http.ResponseWriter, r *http.Request, params ga
 	for _, a := range resp.GetArticles() {
 		article, err := toArticleResponse(a)
 		if err != nil {
-			httputil.WriteError(w, r, http.StatusInternalServerError, "internal error")
+			utils.WriteError(w, r, http.StatusInternalServerError, "internal error")
 			return
 		}
 		articles = append(articles, article)
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, gatewayv1.ArticleListResponse{
+	utils.WriteJSON(w, http.StatusOK, gatewayv1.ArticleListResponse{
 		Articles:   &articles,
-		NextCursor: ptr(resp.GetNextCursor()),
+		NextCursor: new(resp.GetNextCursor()),
 	})
 }

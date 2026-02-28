@@ -9,10 +9,6 @@ import (
 	gatewayv1 "github.com/SonOfSteveJobs/habr/pkg/gen/gateway/v1"
 )
 
-func ptr[T any](v T) *T {
-	return &v
-}
-
 func toArticleResponse(a *articlev1.Article) (gatewayv1.ArticleResponse, error) {
 	if a == nil {
 		return gatewayv1.ArticleResponse{}, nil
@@ -31,15 +27,15 @@ func toArticleResponse(a *articlev1.Article) (gatewayv1.ArticleResponse, error) 
 	resp := gatewayv1.ArticleResponse{
 		Id:       &id,
 		AuthorId: &authorID,
-		Title:    ptr(a.GetTitle()),
-		Content:  ptr(a.GetContent()),
+		Title:    new(a.GetTitle()),
+		Content:  new(a.GetContent()),
 	}
 
 	if a.GetCreatedAt() != nil {
-		resp.CreatedAt = ptr(a.GetCreatedAt().AsTime())
+		resp.CreatedAt = new(a.GetCreatedAt().AsTime())
 	}
 	if a.GetUpdatedAt() != nil {
-		resp.UpdatedAt = ptr(a.GetUpdatedAt().AsTime())
+		resp.UpdatedAt = new(a.GetUpdatedAt().AsTime())
 	}
 
 	return resp, nil
