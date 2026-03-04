@@ -11,6 +11,7 @@ import (
 	authv1 "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1"
 	"github.com/SonOfSteveJobs/habr/pkg/grpcvalidate"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
+	"github.com/SonOfSteveJobs/habr/pkg/tracing"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/config"
 )
 
@@ -63,6 +64,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	log := logger.Logger()
 
 	steps := []initStep{
+		{"tracing", a.initTracing},
 		{"infra: postgres, redis, kafka", a.initInfra},
 		{"service: repositories, services", a.initService},
 		{"gRPC server", a.initGRPCServer},
@@ -95,9 +97,22 @@ func (a *App) initService(_ context.Context) error {
 	return nil
 }
 
+func (a *App) initTracing(ctx context.Context) error {
+	if err := tracing.InitTracer(ctx, config.AppConfig().Tracing()); err != nil {
+		return err
+	}
+
+	closer.AddNamed("tracing", tracing.ShutdownTracer)
+
+	return nil
+}
+
 func (a *App) initGRPCServer(_ context.Context) error {
 	a.grpcServer = grpc.NewServer(
-		grpc.UnaryInterceptor(grpcvalidate.UnaryInterceptor()),
+		grpc.ChainUnaryInterceptor(
+			tracing.UnaryServerInterceptor(),
+			grpcvalidate.UnaryInterceptor(),
+		),
 	)
 	authv1.RegisterAuthServiceServer(a.grpcServer, a.service.Handler())
 	reflection.Register(a.grpcServer)

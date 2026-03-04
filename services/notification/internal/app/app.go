@@ -6,6 +6,7 @@ import (
 
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
+	"github.com/SonOfSteveJobs/habr/pkg/tracing"
 	"github.com/SonOfSteveJobs/habr/services/notification/internal/config"
 )
 
@@ -78,6 +79,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	log := logger.Logger()
 
 	steps := []initStep{
+		{"tracing", a.initTracing},
 		{"infra: postgres, kafka", a.initInfra},
 		{"service: consumer", a.initService},
 	}
@@ -89,6 +91,16 @@ func (a *App) initDeps(ctx context.Context) error {
 		}
 		log.Info().Str("component", s.name).Msg("init ok")
 	}
+
+	return nil
+}
+
+func (a *App) initTracing(ctx context.Context) error {
+	if err := tracing.InitTracer(ctx, config.AppConfig().Tracing()); err != nil {
+		return err
+	}
+
+	closer.AddNamed("tracing", tracing.ShutdownTracer)
 
 	return nil
 }

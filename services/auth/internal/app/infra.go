@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/IBM/sarama"
+	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
 
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
@@ -47,7 +49,14 @@ func (c *infraContainer) TxManager() *transaction.Manager      { return c.txMana
 func (c *infraContainer) SaramaProducer() sarama.AsyncProducer { return c.saramaProducer }
 
 func (c *infraContainer) initPgPool(ctx context.Context) error {
-	pool, err := pgxpool.New(ctx, config.AppConfig().DBURI())
+	pgCfg, err := pgxpool.ParseConfig(config.AppConfig().DBURI())
+	if err != nil {
+		return err
+	}
+
+	pgCfg.ConnConfig.Tracer = otelpgx.NewTracer()
+
+	pool, err := pgxpool.NewWithConfig(ctx, pgCfg)
 	if err != nil {
 		return err
 	}
@@ -64,6 +73,11 @@ func (c *infraContainer) initRedisClient(ctx context.Context) error {
 	client := redis.NewClient(&redis.Options{
 		Addr: config.AppConfig().RedisAddr(),
 	})
+
+	if err := redisotel.InstrumentTracing(client); err != nil {
+		return err
+	}
+
 	if err := client.Ping(ctx).Err(); err != nil {
 		return err
 	}

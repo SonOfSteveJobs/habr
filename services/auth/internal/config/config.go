@@ -25,6 +25,7 @@ type Config struct {
 	verificationCodeTTL time.Duration
 	logger              LoggerConfig
 	kafka               KafkaConfig
+	tracing             *TracingConfig
 }
 
 func (c *Config) GRPCPort() string                   { return c.grpcPort }
@@ -36,6 +37,7 @@ func (c *Config) RefreshTokenTTL() time.Duration     { return c.refreshTokenTTL 
 func (c *Config) VerificationCodeTTL() time.Duration { return c.verificationCodeTTL }
 func (c *Config) Logger() LoggerConfig               { return c.logger }
 func (c *Config) Kafka() KafkaConfig                 { return c.kafka }
+func (c *Config) Tracing() *TracingConfig            { return c.tracing }
 
 func Load(path ...string) error {
 	err := godotenv.Load(path...)
@@ -97,6 +99,11 @@ func Load(path ...string) error {
 		return err
 	}
 
+	tracing, err := newTracingConfig()
+	if err != nil {
+		return err
+	}
+
 	appConfig = &Config{
 		grpcPort:            grpcPort,
 		dbURI:               dbURI,
@@ -107,6 +114,7 @@ func Load(path ...string) error {
 		verificationCodeTTL: verificationCodeTTL,
 		logger:              logger,
 		kafka:               kafka,
+		tracing:             tracing,
 	}
 
 	return nil

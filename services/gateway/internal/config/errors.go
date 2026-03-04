@@ -10,4 +10,6 @@ var (
 	ErrLoggerLevelNotProvided     = errors.New("LOGGER_LEVEL is not provided")
 	ErrLoggerAsJsonNotProvided    = errors.New("LOGGER_AS_JSON is not provided")
 	ErrLoggerAsJsonInvalid        = errors.New("LOGGER_AS_JSON must be true or false")
+	ErrOtelEndpointNotProvided    = errors.New("OTEL_COLLECTOR_ENDPOINT is not provided")
+	ErrOtelServiceNameNotProvided = errors.New("OTEL_SERVICE_NAME is not provided")
 )

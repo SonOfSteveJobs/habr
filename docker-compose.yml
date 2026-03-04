@@ -143,6 +143,33 @@ services:
         networks:
             - habr-network
 
+    jaeger:
+        image: jaegertracing/jaeger:2.5.0
+        container_name: habr-jaeger
+        ports:
+            - "16686:16686"
+        environment:
+            COLLECTOR_OTLP_ENABLED: "true"
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+    otel-collector:
+        image: otel/opentelemetry-collector-contrib:0.120.0
+        container_name: habr-otel-collector
+        volumes:
+            - ./deploy/otel-collector-config.yml:/etc/otelcol/config.yml:ro
+        command: ["--config=/etc/otelcol/config.yml"]
+        ports:
+            - "4317:4317"
+            - "4318:4318"
+        depends_on:
+            jaeger:
+                condition: service_started
+        restart: unless-stopped
+        networks:
+            - habr-network
+
     auth:
         build:
             context: .
@@ -155,6 +182,10 @@ services:
             KAFKA_BROKERS: "kafka:${KAFKA_INTERNAL_PORT}"
             LOGGER_LEVEL: ${LOGGER_LEVEL}
             LOGGER_AS_JSON: ${LOGGER_AS_JSON}
+            OTEL_COLLECTOR_ENDPOINT: "otel-collector:4317"
+            OTEL_SERVICE_NAME: "auth"
+            OTEL_ENVIRONMENT: "local"
+            OTEL_SERVICE_VERSION: "0.1.0"
         depends_on:
             postgres-auth:
                 condition: service_healthy
@@ -162,6 +193,8 @@ services:
                 condition: service_healthy
             kafka:
                 condition: service_healthy
+            otel-collector:
+                condition: service_started
         restart: unless-stopped
         networks:
             - habr-network
@@ -177,11 +210,17 @@ services:
             REDIS_ADDR: "redis:${REDIS_PORT}"
             LOGGER_LEVEL: ${LOGGER_LEVEL}
             LOGGER_AS_JSON: ${LOGGER_AS_JSON}
+            OTEL_COLLECTOR_ENDPOINT: "otel-collector:4317"
+            OTEL_SERVICE_NAME: "article"
+            OTEL_ENVIRONMENT: "local"
+            OTEL_SERVICE_VERSION: "0.1.0"
         depends_on:
             postgres-article:
                 condition: service_healthy
             redis:
                 condition: service_healthy
+            otel-collector:
+                condition: service_started
         restart: unless-stopped
         networks:
             - habr-network
@@ -199,9 +238,14 @@ services:
             ARTICLE_GRPC_ADDR: "article:${ARTICLE_GRPC_PORT}"
             LOGGER_LEVEL: ${LOGGER_LEVEL}
             LOGGER_AS_JSON: ${LOGGER_AS_JSON}
+            OTEL_COLLECTOR_ENDPOINT: "otel-collector:4317"
+            OTEL_SERVICE_NAME: "gateway"
+            OTEL_ENVIRONMENT: "local"
+            OTEL_SERVICE_VERSION: "0.1.0"
         depends_on:
             - auth
             - article
+            - otel-collector
         restart: unless-stopped
         networks:
             - habr-network
@@ -218,11 +262,17 @@ services:
             KAFKA_GROUP_ID: "notification-group"
             LOGGER_LEVEL: ${LOGGER_LEVEL}
             LOGGER_AS_JSON: ${LOGGER_AS_JSON}
+            OTEL_COLLECTOR_ENDPOINT: "otel-collector:4317"
+            OTEL_SERVICE_NAME: "notification"
+            OTEL_ENVIRONMENT: "local"
+            OTEL_SERVICE_VERSION: "0.1.0"
         depends_on:
             postgres-notification:
                 condition: service_healthy
             kafka:
                 condition: service_healthy
+            otel-collector:
+                condition: service_started
         restart: unless-stopped
         networks:
             - habr-network
