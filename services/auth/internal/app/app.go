@@ -65,6 +65,7 @@ func (a *App) initDeps(ctx context.Context) error {
 
 	steps := []initStep{
 		{"tracing", a.initTracing},
+		{"otel-logger", a.initOTelLogger},
 		{"infra: postgres, redis, kafka", a.initInfra},
 		{"service: repositories, services", a.initService},
 		{"gRPC server", a.initGRPCServer},
@@ -103,6 +104,16 @@ func (a *App) initTracing(ctx context.Context) error {
 	}
 
 	closer.AddNamed("tracing", tracing.ShutdownTracer)
+
+	return nil
+}
+
+func (a *App) initOTelLogger(ctx context.Context) error {
+	if err := logger.EnableOTel(ctx, config.AppConfig().Tracing()); err != nil {
+		return err
+	}
+
+	closer.AddNamed("otel-logger", logger.ShutdownOTelLogger)
 
 	return nil
 }
