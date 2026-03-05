@@ -18,12 +18,19 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    needs: [generate]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
+
+      - name: Download generated code
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-code
+          path: pkg/gen/
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v7
