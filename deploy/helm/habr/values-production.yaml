@@ -1,0 +1,76 @@
+# Production overrides for habr umbrella chart
+
+gateway:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: habr.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+
+auth:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+article:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+notification:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+postgresql-auth:
+  auth:
+    existingSecret: habr-postgresql-auth
+  primary:
+    persistence:
+      size: 10Gi
+
+postgresql-article:
+  auth:
+    existingSecret: habr-postgresql-article
+  primary:
+    persistence:
+      size: 10Gi
+
+postgresql-notification:
+  auth:
+    existingSecret: habr-postgresql-notification
+  primary:
+    persistence:
+      size: 5Gi
+
+elasticsearch:
+  master:
+    replicaCount: 3
+    persistence:
+      size: 30Gi

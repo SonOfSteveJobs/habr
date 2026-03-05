@@ -1,0 +1,58 @@
+apiVersion: v2
+name: habr
+description: Habr microservices platform umbrella chart
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+dependencies:
+  # Application services
+  - name: gateway
+    version: "0.1.0"
+    repository: "file://../charts/gateway"
+  - name: auth
+    version: "0.1.0"
+    repository: "file://../charts/auth"
+  - name: article
+    version: "0.1.0"
+    repository: "file://../charts/article"
+  - name: notification
+    version: "0.1.0"
+    repository: "file://../charts/notification"
+
+  # Infrastructure
+  - name: postgresql
+    alias: postgresql-auth
+    version: "16.x.x"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: postgresql-auth.enabled
+  - name: postgresql
+    alias: postgresql-article
+    version: "16.x.x"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: postgresql-article.enabled
+  - name: postgresql
+    alias: postgresql-notification
+    version: "16.x.x"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: postgresql-notification.enabled
+  - name: redis
+    version: "20.x.x"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: redis.enabled
+  - name: kafka
+    version: "31.x.x"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: kafka.enabled
+  - name: elasticsearch
+    version: "22.x.x"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: elasticsearch.enabled
+  - name: kube-prometheus-stack
+    version: "72.x.x"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: kube-prometheus-stack.enabled
+  - name: jaeger
+    version: "3.x.x"
+    repository: https://jaegertracing.github.io/helm-charts
+    condition: jaeger.enabled
