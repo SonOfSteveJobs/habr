@@ -1,0 +1,526 @@
+{
+  "uid": "habr-platform-overview",
+  "title": "Habr Platform Overview",
+  "tags": ["habr", "platform"],
+  "timezone": "browser",
+  "editable": true,
+  "refresh": "10s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Overview",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "type": "stat",
+      "title": "Total RPS",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_request_total[5m])) + sum(rate(rpc_server_request_total[5m]))",
+          "legendFormat": "RPS"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "HTTP Error Rate %",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_request_total{http_status_code=~\"5..\"}[5m])) / sum(rate(http_server_request_total[5m])) * 100",
+          "legendFormat": "Error %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "gRPC Error Rate %",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(rpc_server_request_total{rpc_grpc_status_code!=\"OK\"}[5m])) / sum(rate(rpc_server_request_total[5m])) * 100",
+          "legendFormat": "Error %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "P95 HTTP Latency",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "P95 gRPC Latency",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(rpc_server_duration_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Kafka Consumer RPS",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(kafka_consumer_messages_total[5m]))",
+          "legendFormat": "msg/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+
+    {
+      "type": "row",
+      "title": "Gateway (HTTP)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "RPS by Path",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_request_total[5m])) by (http_path)",
+          "legendFormat": "{{http_path}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Status Codes",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_request_total[5m])) by (http_status_code)",
+          "legendFormat": "{{http_status_code}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "fillOpacity": 30, "stacking": { "mode": "normal" } }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latency by Path (p50/p95/p99)",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_duration_bucket[5m])) by (le, http_path))",
+          "legendFormat": "p50 {{http_path}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_bucket[5m])) by (le, http_path))",
+          "legendFormat": "p95 {{http_path}}"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_duration_bucket[5m])) by (le, http_path))",
+          "legendFormat": "p99 {{http_path}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "type": "table",
+      "title": "Top-5 Slowest Endpoints",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "topk(5, histogram_quantile(0.95, sum(rate(http_server_duration_bucket[5m])) by (le, http_path)))",
+          "legendFormat": "{{http_path}}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true },
+            "renameByName": { "http_path": "Endpoint", "Value": "P95 (s)" }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": { "sort": [{ "field": "P95 (s)", "desc": true }] }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+
+    {
+      "type": "row",
+      "title": "gRPC Services (Server-side)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "RPS by Service",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(rpc_server_request_total[5m])) by (service_name)",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "RPS by Method",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(rpc_server_request_total[5m])) by (rpc_method)",
+          "legendFormat": "{{rpc_method}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Error Rate by Service",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(rpc_server_request_total{rpc_grpc_status_code!=\"OK\"}[5m])) by (service_name)",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latency by Method (p50/p95/p99)",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(rpc_server_duration_bucket[5m])) by (le, rpc_method))",
+          "legendFormat": "p50 {{rpc_method}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(rpc_server_duration_bucket[5m])) by (le, rpc_method))",
+          "legendFormat": "p95 {{rpc_method}}"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(rpc_server_duration_bucket[5m])) by (le, rpc_method))",
+          "legendFormat": "p99 {{rpc_method}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "fillOpacity": 10 } }
+      }
+    },
+
+    {
+      "type": "row",
+      "title": "gRPC Client (Gateway -> Services)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "Client RPS by Method",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(rpc_client_request_total[5m])) by (rpc_method)",
+          "legendFormat": "{{rpc_method}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Client Latency (p50/p95/p99)",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(rpc_client_duration_bucket[5m])) by (le, rpc_method))",
+          "legendFormat": "p50 {{rpc_method}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(rpc_client_duration_bucket[5m])) by (le, rpc_method))",
+          "legendFormat": "p95 {{rpc_method}}"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(rpc_client_duration_bucket[5m])) by (le, rpc_method))",
+          "legendFormat": "p99 {{rpc_method}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Client Error Rate",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(rpc_client_request_total{rpc_grpc_status_code!=\"OK\"}[5m])) by (rpc_method)",
+          "legendFormat": "{{rpc_method}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10 } }
+      }
+    },
+
+    {
+      "type": "row",
+      "title": "Kafka",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "Consumer Throughput",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 33 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rate(kafka_consumer_messages_total[5m])",
+          "legendFormat": "{{messaging_destination}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Producer Throughput",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 33 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rate(kafka_producer_messages_total[5m])",
+          "legendFormat": "{{messaging_destination}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Consumer Processing Time (p50/p95/p99)",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 33 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(kafka_consumer_duration_bucket[5m])) by (le, messaging_destination))",
+          "legendFormat": "p50 {{messaging_destination}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(kafka_consumer_duration_bucket[5m])) by (le, messaging_destination))",
+          "legendFormat": "p95 {{messaging_destination}}"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(kafka_consumer_duration_bucket[5m])) by (le, messaging_destination))",
+          "legendFormat": "p99 {{messaging_destination}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "fillOpacity": 10 } }
+      }
+    },
+
+    {
+      "type": "row",
+      "title": "Database",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 41 },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "DB Query Duration (p50/p95/p99)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 42 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(db_client_operation_duration_bucket[5m])) by (le, service_name))",
+          "legendFormat": "p50 {{service_name}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(db_client_operation_duration_bucket[5m])) by (le, service_name))",
+          "legendFormat": "p95 {{service_name}}"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(db_client_operation_duration_bucket[5m])) by (le, service_name))",
+          "legendFormat": "p99 {{service_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "DB Queries RPS",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 42 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(db_client_operation_duration_count[5m])) by (service_name)",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10 } }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

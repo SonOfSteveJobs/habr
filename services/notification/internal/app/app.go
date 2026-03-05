@@ -6,6 +6,7 @@ import (
 
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
+	"github.com/SonOfSteveJobs/habr/pkg/metrics"
 	"github.com/SonOfSteveJobs/habr/pkg/tracing"
 	"github.com/SonOfSteveJobs/habr/services/notification/internal/config"
 )
@@ -81,6 +82,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	steps := []initStep{
 		{"tracing", a.initTracing},
 		{"otel-logger", a.initOTelLogger},
+		{"metrics", a.initMetrics},
 		{"infra: postgres, kafka", a.initInfra},
 		{"service: consumer", a.initService},
 	}
@@ -112,6 +114,16 @@ func (a *App) initOTelLogger(ctx context.Context) error {
 	}
 
 	closer.AddNamed("otel-logger", logger.ShutdownOTelLogger)
+
+	return nil
+}
+
+func (a *App) initMetrics(ctx context.Context) error {
+	if err := metrics.InitMeter(ctx, config.AppConfig().Tracing()); err != nil {
+		return err
+	}
+
+	closer.AddNamed("metrics", metrics.ShutdownMeter)
 
 	return nil
 }

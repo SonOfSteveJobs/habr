@@ -11,6 +11,7 @@ import (
 	authv1 "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1"
 	"github.com/SonOfSteveJobs/habr/pkg/grpcvalidate"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
+	"github.com/SonOfSteveJobs/habr/pkg/metrics"
 	"github.com/SonOfSteveJobs/habr/pkg/tracing"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/config"
 )
@@ -66,6 +67,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	steps := []initStep{
 		{"tracing", a.initTracing},
 		{"otel-logger", a.initOTelLogger},
+		{"metrics", a.initMetrics},
 		{"infra: postgres, redis, kafka", a.initInfra},
 		{"service: repositories, services", a.initService},
 		{"gRPC server", a.initGRPCServer},
@@ -118,10 +120,21 @@ func (a *App) initOTelLogger(ctx context.Context) error {
 	return nil
 }
 
+func (a *App) initMetrics(ctx context.Context) error {
+	if err := metrics.InitMeter(ctx, config.AppConfig().Tracing()); err != nil {
+		return err
+	}
+
+	closer.AddNamed("metrics", metrics.ShutdownMeter)
+
+	return nil
+}
+
 func (a *App) initGRPCServer(_ context.Context) error {
 	a.grpcServer = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			tracing.UnaryServerInterceptor(),
+			metrics.UnaryServerInterceptor(),
 			grpcvalidate.UnaryInterceptor(),
 		),
 	)

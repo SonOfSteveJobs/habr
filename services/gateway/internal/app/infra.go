@@ -9,6 +9,7 @@ import (
 
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
 	"github.com/SonOfSteveJobs/habr/pkg/grpclog"
+	"github.com/SonOfSteveJobs/habr/pkg/metrics"
 	"github.com/SonOfSteveJobs/habr/pkg/tracing"
 	"github.com/SonOfSteveJobs/habr/services/gateway/internal/config"
 )
@@ -41,6 +42,7 @@ func (c *infraContainer) initAuthConn() error {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(
 			tracing.UnaryClientInterceptor(),
+			metrics.UnaryClientInterceptor(),
 			grpclog.UnaryClientInterceptor(),
 		),
 	)
@@ -61,6 +63,7 @@ func (c *infraContainer) initArticleConn() error {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(
 			tracing.UnaryClientInterceptor(),
+			metrics.UnaryClientInterceptor(),
 			grpclog.UnaryClientInterceptor(),
 		),
 	)

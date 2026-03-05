@@ -78,6 +78,10 @@ func (c *infraContainer) initRedisClient(ctx context.Context) error {
 		return err
 	}
 
+	if err := redisotel.InstrumentMetrics(client); err != nil {
+		return err
+	}
+
 	if err := client.Ping(ctx).Err(); err != nil {
 		return err
 	}

@@ -202,6 +202,51 @@ services:
                 condition: service_started
             elasticsearch:
                 condition: service_healthy
+            prometheus:
+                condition: service_healthy
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+    prometheus:
+        image: prom/prometheus:v3.3.1
+        container_name: habr-prometheus
+        ports:
+            - "9090:9090"
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.enable-lifecycle"
+            - "--web.enable-remote-write-receiver"
+        volumes:
+            - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - prometheus-data:/prometheus
+        healthcheck:
+            test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy || exit 1"]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+        restart: unless-stopped
+        networks:
+            - habr-network
+
+    grafana:
+        image: grafana/grafana:12.0.0
+        container_name: habr-grafana
+        ports:
+            - "3000:3000"
+        environment:
+            GF_SECURITY_ADMIN_USER: admin
+            GF_SECURITY_ADMIN_PASSWORD: admin
+            GF_AUTH_ANONYMOUS_ENABLED: "true"
+            GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+        volumes:
+            - grafana-data:/var/lib/grafana
+            - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+            - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+        depends_on:
+            prometheus:
+                condition: service_healthy
         restart: unless-stopped
         networks:
             - habr-network
@@ -323,3 +368,5 @@ volumes:
     pgdata-notification:
     kafka-data:
     esdata:
+    prometheus-data:
+    grafana-data:

@@ -10,6 +10,10 @@ processors:
   batch:
     timeout: 1s
     send_batch_size: 1024
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
 
 exporters:
   otlp/jaeger:
@@ -21,14 +25,20 @@ exporters:
     logs_index: habr-logs
     sending_queue:
       enabled: true
+  prometheusremotewrite:
+    endpoint: http://prometheus:9090/api/v1/write
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [memory_limiter, batch]
       exporters: [otlp/jaeger]
     logs:
       receivers: [otlp]
-      processors: [batch]
+      processors: [memory_limiter, batch]
       exporters: [elasticsearch]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheusremotewrite]
