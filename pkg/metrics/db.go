@@ -19,10 +19,10 @@ var (
 func initDBMetrics() {
 	dbOnce.Do(func() {
 		meter := otel.Meter("pkg/metrics")
-		dbCounter, _ = meter.Int64Counter("db.client.operation.total",
+		dbCounter, _ = meter.Int64Counter("db.client.operation.total", //nolint:gosec
 			metric.WithDescription("Total number of database operations"),
 		)
-		dbDuration, _ = meter.Float64Histogram("db.client.operation.duration",
+		dbDuration, _ = meter.Float64Histogram("db.client.operation.duration", //nolint:gosec
 			metric.WithDescription("Duration of database operations in seconds"),
 			metric.WithUnit("s"),
 		)

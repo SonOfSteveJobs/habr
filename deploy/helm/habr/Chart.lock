@@ -1,0 +1,39 @@
+dependencies:
+- name: gateway
+  repository: file://../charts/gateway
+  version: 0.1.0
+- name: auth
+  repository: file://../charts/auth
+  version: 0.1.0
+- name: article
+  repository: file://../charts/article
+  version: 0.1.0
+- name: notification
+  repository: file://../charts/notification
+  version: 0.1.0
+- name: postgresql
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 16.7.27
+- name: postgresql
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 16.7.27
+- name: postgresql
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 16.7.27
+- name: redis
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 20.13.4
+- name: kafka
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 31.5.0
+- name: elasticsearch
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 22.1.6
+- name: kube-prometheus-stack
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 72.9.1
+- name: jaeger
+  repository: https://jaegertracing.github.io/helm-charts
+  version: 3.4.1
+digest: sha256:c394207e16fa6575a0e26ae52885db8279e74cfc33d97a273694922a9b09c392
+generated: "2026-03-05T16:56:07.662817+03:00"

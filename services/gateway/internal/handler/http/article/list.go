@@ -13,7 +13,7 @@ func (h *Handler) ListArticles(w http.ResponseWriter, r *http.Request, params ga
 	if params.Cursor != nil {
 		req.Cursor = *params.Cursor
 	}
-	if params.Limit != nil {
+	if params.Limit != nil && *params.Limit > 0 && *params.Limit <= 100 {
 		req.Limit = int32(*params.Limit)
 	}
 

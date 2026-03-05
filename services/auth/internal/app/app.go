@@ -96,7 +96,7 @@ func (a *App) initInfra(ctx context.Context) error {
 
 func (a *App) initService(_ context.Context) error {
 	a.service = newServiceContainer(a.infra)
-	_ = a.service.KafkaProducer()
+	_ = a.service.KafkaProducer() //nolint:contextcheck // нет родительского контекста, тут все вроде бы норм
 	return nil
 }
 

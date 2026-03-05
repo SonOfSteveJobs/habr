@@ -25,10 +25,10 @@ var (
 func initServerMetrics() {
 	serverOnce.Do(func() {
 		meter := otel.Meter("pkg/metrics")
-		serverReqCounter, _ = meter.Int64Counter("rpc.server.request.total",
+		serverReqCounter, _ = meter.Int64Counter("rpc.server.request.total", //nolint:gosec
 			metric.WithDescription("Total number of gRPC server requests"),
 		)
-		serverDuration, _ = meter.Float64Histogram("rpc.server.duration",
+		serverDuration, _ = meter.Float64Histogram("rpc.server.duration", //nolint:gosec
 			metric.WithDescription("Duration of gRPC server requests in seconds"),
 			metric.WithUnit("s"),
 		)
@@ -38,10 +38,10 @@ func initServerMetrics() {
 func initClientMetrics() {
 	clientOnce.Do(func() {
 		meter := otel.Meter("pkg/metrics")
-		clientReqCounter, _ = meter.Int64Counter("rpc.client.request.total",
+		clientReqCounter, _ = meter.Int64Counter("rpc.client.request.total", //nolint:gosec
 			metric.WithDescription("Total number of gRPC client requests"),
 		)
-		clientDuration, _ = meter.Float64Histogram("rpc.client.duration",
+		clientDuration, _ = meter.Float64Histogram("rpc.client.duration", //nolint:gosec
 			metric.WithDescription("Duration of gRPC client requests in seconds"),
 			metric.WithUnit("s"),
 		)

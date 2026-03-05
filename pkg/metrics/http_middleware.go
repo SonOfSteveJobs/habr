@@ -21,10 +21,10 @@ var (
 func initHTTPMetrics() {
 	httpOnce.Do(func() {
 		meter := otel.Meter("pkg/metrics")
-		httpReqCounter, _ = meter.Int64Counter("http.server.request.total",
+		httpReqCounter, _ = meter.Int64Counter("http.server.request.total", //nolint:gosec
 			metric.WithDescription("Total number of HTTP server requests"),
 		)
-		httpDuration, _ = meter.Float64Histogram("http.server.duration",
+		httpDuration, _ = meter.Float64Histogram("http.server.duration", //nolint:gosec
 			metric.WithDescription("Duration of HTTP server requests in seconds"),
 			metric.WithUnit("s"),
 		)

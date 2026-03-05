@@ -39,6 +39,7 @@ func (c *Config) Logger() LoggerConfig               { return c.logger }
 func (c *Config) Kafka() KafkaConfig                 { return c.kafka }
 func (c *Config) Tracing() *TracingConfig            { return c.tracing }
 
+//nolint:cyclop
 func Load(path ...string) error {
 	err := godotenv.Load(path...)
 	if err != nil && !os.IsNotExist(err) {

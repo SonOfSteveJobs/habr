@@ -19,6 +19,10 @@ import (
 
 const testSecret = "test-jwt-secret"
 
+func withBearerScopes(r *http.Request) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), gatewayv1.BearerScopes, []string{})) //nolint:staticcheck // generated const
+}
+
 func buildJWT(t *testing.T, payload jwtPayload, secret string) string {
 	t.Helper()
 
@@ -80,7 +84,7 @@ func TestAuth_ValidToken(t *testing.T) {
 	handler := Auth(testSecret)(next)
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	r = r.WithContext(context.WithValue(r.Context(), gatewayv1.BearerScopes, []string{}))
+	r = withBearerScopes(r)
 	r.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 
@@ -100,7 +104,7 @@ func TestAuth_MissingHeader(t *testing.T) {
 	}))
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	r = r.WithContext(context.WithValue(r.Context(), gatewayv1.BearerScopes, []string{}))
+	r = withBearerScopes(r)
 	w := httptest.NewRecorder()
 
 	handler.ServeHTTP(w, r)
@@ -121,7 +125,7 @@ func TestAuth_InvalidSignature(t *testing.T) {
 	}))
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	r = r.WithContext(context.WithValue(r.Context(), gatewayv1.BearerScopes, []string{}))
+	r = withBearerScopes(r)
 	r.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 
@@ -143,7 +147,7 @@ func TestAuth_ExpiredToken(t *testing.T) {
 	}))
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	r = r.WithContext(context.WithValue(r.Context(), gatewayv1.BearerScopes, []string{}))
+	r = withBearerScopes(r)
 	r.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 

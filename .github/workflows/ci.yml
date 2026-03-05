@@ -38,8 +38,8 @@ jobs:
       - name: Lint proto
         run: buf lint proto/
 
-  test-unit:
-    name: Unit Tests
+  generate:
+    name: Generate Code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +47,44 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
+
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          version: "1.65.0"
+
+      - name: Generate proto
+        run: buf generate
+        working-directory: proto
+
+      - name: Install oapi-codegen
+        run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
+
+      - name: Generate OpenAPI
+        run: oapi-codegen -generate chi-server,models,spec -package gatewayv1 -o pkg/gen/gateway/v1/gateway.gen.go api/gateway/v1/gateway.yaml
+
+      - name: Upload generated code
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-code
+          path: pkg/gen/
+
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [generate]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Download generated code
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-code
+          path: pkg/gen/
 
       - name: Run unit tests
         run: go test -race ./services/... ./pkg/... -coverprofile=coverage.out -covermode=atomic
@@ -60,12 +98,19 @@ jobs:
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-latest
+    needs: [generate]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
+
+      - name: Download generated code
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-code
+          path: pkg/gen/
 
       - name: Run integration tests
         run: go test -tags=integration -v -count=1 -timeout=5m ./tests/...
@@ -74,7 +119,7 @@ jobs:
     name: Build & Push Images
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [lint, test-unit, test-integration]
+    needs: [lint, test-unit, test-integration, generate]
     strategy:
       matrix:
         service: [gateway, auth, article, notification]

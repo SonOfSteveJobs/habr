@@ -24,7 +24,7 @@ func TestRegister_Success(t *testing.T) {
 	}
 	h := newTestHandler(client)
 
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/register", `{"email":"user@example.com","password":"pass123"}`)
+	w, r := makeRequest("/api/v1/auth/register", `{"email":"user@example.com","password":"pass123"}`)
 	h.Register(w, r)
 
 	if w.Code != http.StatusCreated {
@@ -35,7 +35,7 @@ func TestRegister_Success(t *testing.T) {
 func TestRegister_InvalidBody(t *testing.T) {
 	h := newTestHandler(&mockAuthClient{})
 
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/register", `{invalid`)
+	w, r := makeRequest("/api/v1/auth/register", `{invalid`)
 	h.Register(w, r)
 
 	if w.Code != http.StatusBadRequest {
@@ -51,7 +51,7 @@ func TestRegister_GRPCAlreadyExists(t *testing.T) {
 	}
 	h := newTestHandler(client)
 
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/register", `{"email":"user@example.com","password":"pass123"}`)
+	w, r := makeRequest("/api/v1/auth/register", `{"email":"user@example.com","password":"pass123"}`)
 	h.Register(w, r)
 
 	if w.Code != http.StatusConflict {
@@ -70,7 +70,7 @@ func TestLogin_Success(t *testing.T) {
 	}
 	h := newTestHandler(client)
 
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/login", `{"email":"user@example.com","password":"pass123"}`)
+	w, r := makeRequest("/api/v1/auth/login", `{"email":"user@example.com","password":"pass123"}`)
 	h.Login(w, r)
 
 	if w.Code != http.StatusOK {
@@ -93,7 +93,7 @@ func TestLogin_Success(t *testing.T) {
 func TestLogin_InvalidBody(t *testing.T) {
 	h := newTestHandler(&mockAuthClient{})
 
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/login", `{invalid`)
+	w, r := makeRequest("/api/v1/auth/login", `{invalid`)
 	h.Login(w, r)
 
 	if w.Code != http.StatusBadRequest {
@@ -109,7 +109,7 @@ func TestLogin_GRPCUnauthenticated(t *testing.T) {
 	}
 	h := newTestHandler(client)
 
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/login", `{"email":"user@example.com","password":"wrong"}`)
+	w, r := makeRequest("/api/v1/auth/login", `{"email":"user@example.com","password":"wrong"}`)
 	h.Login(w, r)
 
 	if w.Code != http.StatusUnauthorized {
@@ -130,7 +130,7 @@ func TestRefreshToken_Success(t *testing.T) {
 	h := newTestHandler(client)
 
 	body := `{"user_id":"` + userID.String() + `","refresh_token":"old-refresh"}`
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/refresh", body)
+	w, r := makeRequest("/api/v1/auth/refresh", body)
 	h.RefreshToken(w, r)
 
 	if w.Code != http.StatusOK {
@@ -156,7 +156,7 @@ func TestRefreshToken_GRPCError(t *testing.T) {
 	h := newTestHandler(client)
 
 	body := `{"user_id":"` + userID.String() + `","refresh_token":"bad-token"}`
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/refresh", body)
+	w, r := makeRequest("/api/v1/auth/refresh", body)
 	h.RefreshToken(w, r)
 
 	if w.Code != http.StatusUnauthorized {
@@ -173,7 +173,7 @@ func TestLogout_Success(t *testing.T) {
 	}
 	h := newTestHandler(client)
 
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/logout", "")
+	w, r := makeRequest("/api/v1/auth/logout", "")
 	ctx := middleware.WithUserID(r.Context(), userID)
 	r = r.WithContext(ctx)
 
@@ -187,7 +187,7 @@ func TestLogout_Success(t *testing.T) {
 func TestLogout_NoUserID(t *testing.T) {
 	h := newTestHandler(&mockAuthClient{})
 
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/logout", "")
+	w, r := makeRequest("/api/v1/auth/logout", "")
 	h.Logout(w, r)
 
 	if w.Code != http.StatusUnauthorized {
@@ -204,7 +204,7 @@ func TestLogout_GRPCError(t *testing.T) {
 	}
 	h := newTestHandler(client)
 
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/logout", "")
+	w, r := makeRequest("/api/v1/auth/logout", "")
 	ctx := middleware.WithUserID(r.Context(), userID)
 	r = r.WithContext(ctx)
 
@@ -225,7 +225,7 @@ func TestVerifyEmail_Success(t *testing.T) {
 	h := newTestHandler(client)
 
 	body := `{"user_id":"` + userID.String() + `","code":"123456"}`
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/verify-email", body)
+	w, r := makeRequest("/api/v1/auth/verify-email", body)
 	h.VerifyEmail(w, r)
 
 	if w.Code != http.StatusOK {
@@ -243,7 +243,7 @@ func TestVerifyEmail_GRPCError(t *testing.T) {
 	h := newTestHandler(client)
 
 	body := `{"user_id":"` + userID.String() + `","code":"000000"}`
-	w, r := makeRequest(http.MethodPost, "/api/v1/auth/verify-email", body)
+	w, r := makeRequest("/api/v1/auth/verify-email", body)
 	h.VerifyEmail(w, r)
 
 	if w.Code != http.StatusBadRequest {

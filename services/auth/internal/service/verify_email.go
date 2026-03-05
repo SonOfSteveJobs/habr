@@ -17,7 +17,7 @@ func (s *Service) VerifyEmail(ctx context.Context, userID uuid.UUID, code string
 	}
 
 	// ну не удалили и ладно, по ttl удалится
-	_ = s.verificationRepo.Delete(ctx, userID)
+	_ = s.verificationRepo.Delete(ctx, userID) //nolint:gosec
 
 	return nil
 }

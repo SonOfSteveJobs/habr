@@ -57,7 +57,7 @@ func (a *App) Run() {
 			case <-cleanupCtx.Done():
 				return
 			case <-ticker.C:
-				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				ctx, cancel := context.WithTimeout(cleanupCtx, 30*time.Second)
 				if err := a.service.EventRepository().DeleteOld(ctx, cfg.RetentionPeriod()); err != nil {
 					log.Error().Err(err).Msg("failed to cleanup old events")
 				}

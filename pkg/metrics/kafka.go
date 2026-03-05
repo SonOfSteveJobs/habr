@@ -23,14 +23,14 @@ var (
 func initKafkaMetrics() {
 	kafkaOnce.Do(func() {
 		meter := otel.Meter("pkg/metrics")
-		kafkaConsumerCounter, _ = meter.Int64Counter("kafka.consumer.messages.total",
+		kafkaConsumerCounter, _ = meter.Int64Counter("kafka.consumer.messages.total", //nolint:gosec
 			metric.WithDescription("Total number of consumed Kafka messages"),
 		)
-		kafkaConsumerDuration, _ = meter.Float64Histogram("kafka.consumer.duration",
+		kafkaConsumerDuration, _ = meter.Float64Histogram("kafka.consumer.duration", //nolint:gosec
 			metric.WithDescription("Duration of Kafka message processing in seconds"),
 			metric.WithUnit("s"),
 		)
-		kafkaProducerCounter, _ = meter.Int64Counter("kafka.producer.messages.total",
+		kafkaProducerCounter, _ = meter.Int64Counter("kafka.producer.messages.total", //nolint:gosec
 			metric.WithDescription("Total number of produced Kafka messages"),
 		)
 	})

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -144,8 +145,9 @@ func (a *App) initHTTPServer(_ context.Context) error {
 	cfg := config.AppConfig()
 
 	a.httpServer = &http.Server{
-		Addr:    cfg.HTTPPort(),
-		Handler: a.router,
+		Addr:              cfg.HTTPPort(),
+		Handler:           a.router,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	closer.AddNamed("HTTP server", func(ctx context.Context) error {

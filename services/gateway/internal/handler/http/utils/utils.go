@@ -15,7 +15,7 @@ import (
 func WriteJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(v)
+	_ = json.NewEncoder(w).Encode(v) //nolint:gosec
 }
 
 func WriteError(w http.ResponseWriter, r *http.Request, code int, msg string) {
@@ -33,7 +33,7 @@ func WriteError(w http.ResponseWriter, r *http.Request, code int, msg string) {
 func DecodeBody(r *http.Request, v any) error {
 	r.Body = http.MaxBytesReader(nil, r.Body, 1<<20)
 	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
+		_ = Body.Close() //nolint:gosec
 	}(r.Body)
 	return json.NewDecoder(r.Body).Decode(v)
 }
