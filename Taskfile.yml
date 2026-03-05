@@ -230,3 +230,8 @@ tasks:
         deps: [install-goose]
         cmds:
             - '{{.GOOSE}} -dir migrations/notification postgres "postgres://${NOTIFICATION_DB_USER}:${NOTIFICATION_DB_PASSWORD}@localhost:${NOTIFICATION_DB_PORT}/notification?sslmode=disable" status'
+
+    load-test:
+        desc: "Запускает k6 нагрузочное тестирование gateway (настройки в tests/load/config.json)"
+        cmds:
+            - k6 run tests/load/script.js

@@ -1,0 +1,14 @@
+{
+  "baseUrl": "http://localhost:8080",
+  "rps": 250,
+  "duration": "2m",
+  "readRatio": 90,
+  "setupUsers": 50,
+  "maxVUs": 1000,
+  "thresholds": {
+    "httpReqDurationP95": 500,
+    "httpReqDurationP99": 1000,
+    "httpReqFailedRate": 0.05,
+    "endpointP95": 500
+  }
+}
