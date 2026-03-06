@@ -14,6 +14,26 @@ spec:
       labels:
         {{- include "auth.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.migration.enabled }}
+      initContainers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["goose"]
+          args: ["-dir", "/app/migrations", "postgres", "$(DB_URI)", "up"]
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- range $key, $secretName := .Values.envFromSecret }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ $key }}
+            {{- end }}
+      {{- end }}
       containers:
         - name: auth
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -35,13 +55,13 @@ spec:
                   key: {{ $key }}
             {{- end }}
           livenessProbe:
-            grpc:
-              port: 50051
+            tcpSocket:
+              port: grpc
             initialDelaySeconds: 10
             periodSeconds: 15
           readinessProbe:
-            grpc:
-              port: 50051
+            tcpSocket:
+              port: grpc
             initialDelaySeconds: 5
             periodSeconds: 10
           {{- with .Values.resources }}

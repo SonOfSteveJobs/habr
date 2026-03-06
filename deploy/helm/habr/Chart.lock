@@ -29,11 +29,8 @@ dependencies:
 - name: elasticsearch
   repository: oci://registry-1.docker.io/bitnamicharts
   version: 22.1.6
-- name: kube-prometheus-stack
-  repository: https://prometheus-community.github.io/helm-charts
-  version: 72.9.1
 - name: jaeger
   repository: https://jaegertracing.github.io/helm-charts
-  version: 3.4.1
-digest: sha256:c394207e16fa6575a0e26ae52885db8279e74cfc33d97a273694922a9b09c392
-generated: "2026-03-05T16:56:07.662817+03:00"
+  version: 4.5.0
+digest: sha256:f3a3f3a375f4aa9fd33696d139830ea78ad08507b7c4aee9023088e9b791c14d
+generated: "2026-03-06T12:41:38.019692+03:00"

@@ -17,11 +17,12 @@ gateway:
     GATEWAY_HTTP_PORT: ":8080"
     AUTH_GRPC_ADDR: "habr-auth:50051"
     ARTICLE_GRPC_ADDR: "habr-article:50052"
+    JWT_SECRET: "secret"
     LOGGER_LEVEL: "info"
     LOGGER_AS_JSON: "true"
-    OTEL_COLLECTOR_ENDPOINT: "habr-jaeger-collector:4317"
-  envFromSecret:
-    JWT_SECRET: habr-secrets
+    OTEL_SERVICE_NAME: "gateway"
+    OTEL_COLLECTOR_ENDPOINT: "habr-otel-collector:4317"
+  envFromSecret: {}
 
 auth:
   replicaCount: 1
@@ -36,14 +37,16 @@ auth:
     enabled: true
   env:
     AUTH_GRPC_PORT: ":50051"
+    DB_URI: "postgres://auth_user:auth_password@habr-postgresql-auth:5432/auth_db?sslmode=disable"
     REDIS_ADDR: "habr-redis-master:6379"
     KAFKA_BROKERS: "habr-kafka:9092"
+    KAFKA_TOPIC: "user-registered"
+    JWT_SECRET: "secret"
     LOGGER_LEVEL: "info"
     LOGGER_AS_JSON: "true"
-    OTEL_COLLECTOR_ENDPOINT: "habr-jaeger-collector:4317"
-  envFromSecret:
-    DB_URI: habr-secrets
-    JWT_SECRET: habr-secrets
+    OTEL_SERVICE_NAME: "auth"
+    OTEL_COLLECTOR_ENDPOINT: "habr-otel-collector:4317"
+  envFromSecret: {}
 
 article:
   replicaCount: 1
@@ -58,16 +61,17 @@ article:
     enabled: true
   env:
     ARTICLE_GRPC_PORT: ":50052"
+    DB_URI: "postgres://article_user:article_password@habr-postgresql-article:5432/article_db?sslmode=disable"
     REDIS_ADDR: "habr-redis-master:6379"
     CACHE_ARTICLES_TTL: "5m"
     LOGGER_LEVEL: "info"
     LOGGER_AS_JSON: "true"
-    OTEL_COLLECTOR_ENDPOINT: "habr-jaeger-collector:4317"
-  envFromSecret:
-    DB_URI: habr-secrets
+    OTEL_SERVICE_NAME: "article"
+    OTEL_COLLECTOR_ENDPOINT: "habr-otel-collector:4317"
+  envFromSecret: {}
 
 notification:
-  replicaCount: 1
+  replicaCount: 2
   image:
     repository: ghcr.io/sonofstevejobs/habr-notification
     tag: latest
@@ -75,19 +79,52 @@ notification:
   migration:
     enabled: true
   env:
+    DB_URI: "postgres://notification_user:notification_password@habr-postgresql-notification:5432/notification_db?sslmode=disable"
     KAFKA_BROKERS: "habr-kafka:9092"
     KAFKA_TOPIC: "user-registered"
     KAFKA_GROUP_ID: "notification-service"
     LOGGER_LEVEL: "info"
     LOGGER_AS_JSON: "true"
-    OTEL_COLLECTOR_ENDPOINT: "habr-jaeger-collector:4317"
-  envFromSecret:
-    DB_URI: habr-secrets
+    OTEL_SERVICE_NAME: "notification"
+    OTEL_COLLECTOR_ENDPOINT: "habr-otel-collector:4317"
+  envFromSecret: {}
+
+# --- Observability ---
+
+otelCollector:
+  enabled: true
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: 0.120.0
+
+# --- UI Tools ---
+
+kafkaUi:
+  enabled: true
+  image:
+    repository: provectuslabs/kafka-ui
+    tag: latest
+  service:
+    nodePort: 30032
+
+kibana:
+  enabled: true
+  image:
+    repository: docker.elastic.co/kibana/kibana
+    tag: 9.0.0
+  service:
+    nodePort: 30033
 
 # --- Infrastructure ---
 
+# Bitnami removed free images from Docker Hub.
+# All bitnami images are overridden to use bitnamilegacy/* repositories.
+
 postgresql-auth:
   enabled: true
+  image:
+    repository: bitnamilegacy/postgresql
+    tag: 17.6.0-debian-12-r4
   auth:
     username: auth_user
     password: auth_password
@@ -95,9 +132,16 @@ postgresql-auth:
   primary:
     persistence:
       size: 1Gi
+  volumePermissions:
+    image:
+      repository: bitnamilegacy/os-shell
+      tag: 12-debian-12-r51
 
 postgresql-article:
   enabled: true
+  image:
+    repository: bitnamilegacy/postgresql
+    tag: 17.6.0-debian-12-r4
   auth:
     username: article_user
     password: article_password
@@ -105,9 +149,16 @@ postgresql-article:
   primary:
     persistence:
       size: 1Gi
+  volumePermissions:
+    image:
+      repository: bitnamilegacy/os-shell
+      tag: 12-debian-12-r51
 
 postgresql-notification:
   enabled: true
+  image:
+    repository: bitnamilegacy/postgresql
+    tag: 17.6.0-debian-12-r4
   auth:
     username: notification_user
     password: notification_password
@@ -115,15 +166,25 @@ postgresql-notification:
   primary:
     persistence:
       size: 1Gi
+  volumePermissions:
+    image:
+      repository: bitnamilegacy/os-shell
+      tag: 12-debian-12-r51
 
 redis:
   enabled: true
   architecture: standalone
   auth:
     enabled: false
+  image:
+    repository: bitnamilegacy/redis
+    tag: 8.2.1-debian-12-r0
 
 kafka:
   enabled: true
+  image:
+    repository: bitnamilegacy/kafka
+    tag: 4.0.0-debian-12-r10
   kraft:
     enabled: true
   listeners:
@@ -146,29 +207,103 @@ kafka:
       password: controller
   controller:
     replicaCount: 1
+  extraConfig: |
+    offsets.topic.replication.factor=1
+    transaction.state.log.replication.factor=1
+    transaction.state.log.min.isr=1
   provisioning:
-    enabled: true
-    topics:
-      - name: user-registered
-        partitions: 1
-        replicationFactor: 1
+    enabled: false
 
 elasticsearch:
   enabled: true
+  image:
+    repository: bitnamilegacy/elasticsearch
+    tag: 9.1.2-debian-12-r0
   master:
+    masterOnly: false
     replicaCount: 1
     persistence:
-      size: 5Gi
+      size: 4Gi
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 1Gi
+  data:
+    replicaCount: 0
+  coordinating:
+    replicaCount: 0
+  ingest:
+    replicaCount: 0
+  sysctlImage:
+    repository: bitnamilegacy/os-shell
+    tag: 12-debian-12-r51
+  volumePermissions:
+    image:
+      repository: bitnamilegacy/os-shell
+      tag: 12-debian-12-r51
 
-kube-prometheus-stack:
-  enabled: true
-  grafana:
-    enabled: true
 
 jaeger:
   enabled: true
-  collector:
+  storage:
+    type: elasticsearch
+    elasticsearch:
+      url: http://habr-elasticsearch:9200
+      tls:
+        enabled: false
+  userconfig:
     service:
+      extensions: [jaeger_storage, jaeger_query, healthcheckv2]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [jaeger_storage_exporter]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]
+      telemetry:
+        resource:
+          service.name: jaeger
+        metrics:
+          level: detailed
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
+    extensions:
+      healthcheckv2:
+        use_v2: true
+        http:
+          endpoint: 0.0.0.0:13133
+      jaeger_query:
+        storage:
+          traces: primary_store
+      jaeger_storage:
+        backends:
+          primary_store:
+            elasticsearch:
+              server_urls: ["http://habr-elasticsearch:9200"]
+    receivers:
       otlp:
-        grpc:
-          port: 4317
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch: {}
+    exporters:
+      jaeger_storage_exporter:
+        trace_storage: primary_store
+      debug:
+        verbosity: basic

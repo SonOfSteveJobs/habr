@@ -1,8 +1,6 @@
 package producer
 
 import (
-	"time"
-
 	"github.com/IBM/sarama"
 )
 
@@ -18,26 +16,27 @@ func WithIdempotent() Option {
 	}
 }
 
-// WithFlush - нужен ли батч на отправку (например каждые 100 сообщений или каждые 0.5 сек)
-func WithFlush(messages int, frequency time.Duration) Option {
-	return func(c *sarama.Config) {
-		c.Producer.Flush.Messages = messages
-		c.Producer.Flush.Frequency = frequency
-	}
-}
-
-// WithRetry - нужно ли ретраить сообщения которые упали с ошибкой
-func WithRetry(max int) Option {
-	return func(c *sarama.Config) {
-		c.Producer.Retry.Max = max
-	}
-}
+//// WithFlush - нужен ли батч на отправку (например каждые 100 сообщений или каждые 0.5 сек)
+//func WithFlush(messages int, frequency time.Duration) Option {
+//	return func(c *sarama.Config) {
+//		c.Producer.Flush.Messages = messages
+//		c.Producer.Flush.Frequency = frequency
+//	}
+//}
+//
+//// WithRetry - нужно ли ретраить сообщения которые упали с ошибкой
+//func WithRetry(max int) Option {
+//	return func(c *sarama.Config) {
+//		c.Producer.Retry.Max = max
+//	}
+//}
 
 func NewSyncConfig(opts ...Option) *sarama.Config {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 5
 	config.Producer.Return.Successes = true
+	config.Producer.Partitioner = sarama.NewRoundRobinPartitioner
 
 	for _, opt := range opts {
 		opt(config)
@@ -59,6 +58,7 @@ func NewAsyncConfig(opts ...Option) *sarama.Config {
 	config.Producer.Retry.Max = 5
 	config.Producer.Return.Successes = true
 	config.Producer.Return.Errors = true
+	config.Producer.Partitioner = sarama.NewRoundRobinPartitioner
 
 	for _, opt := range opts {
 		opt(config)

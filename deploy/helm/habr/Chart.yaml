@@ -48,11 +48,9 @@ dependencies:
     version: "22.x.x"
     repository: oci://registry-1.docker.io/bitnamicharts
     condition: elasticsearch.enabled
-  - name: kube-prometheus-stack
-    version: "72.x.x"
-    repository: https://prometheus-community.github.io/helm-charts
-    condition: kube-prometheus-stack.enabled
+  # kube-prometheus-stack installed separately (too large for umbrella chart)
+  # See deploy instructions in DEPLOYMENT.md
   - name: jaeger
-    version: "3.x.x"
+    version: "4.5.0"
     repository: https://jaegertracing.github.io/helm-charts
     condition: jaeger.enabled
