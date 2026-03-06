@@ -124,6 +124,8 @@ redis:
 
 kafka:
   enabled: true
+  kraft:
+    enabled: true
   listeners:
     client:
       protocol: PLAINTEXT
@@ -131,6 +133,17 @@ kafka:
       protocol: PLAINTEXT
     controller:
       protocol: PLAINTEXT
+  sasl:
+    client:
+      users:
+        - admin
+      passwords: admin
+    interbroker:
+      user: interbroker
+      password: interbroker
+    controller:
+      user: controller
+      password: controller
   controller:
     replicaCount: 1
   provisioning:

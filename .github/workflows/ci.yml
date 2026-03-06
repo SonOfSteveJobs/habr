@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: ["*"]
   push:
-    branches: [main]
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -125,7 +125,7 @@ jobs:
   build-images:
     name: Build & Push Images
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     needs: [lint, test-unit, test-integration, generate]
     strategy:
       matrix:

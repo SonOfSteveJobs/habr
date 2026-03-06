@@ -1,16 +1,15 @@
 name: CD
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
+  pull_request:
+    branches: [main, develop]
+    types: [closed]
 
 jobs:
   deploy:
     name: Deploy to Kubernetes
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +24,7 @@ jobs:
 
       - name: Deploy with Helm
         run: |
-          IMAGE_TAG="sha-$(echo ${{ github.event.workflow_run.head_sha }} | cut -c1-7)"
+          IMAGE_TAG="sha-$(echo ${{ github.sha }} | cut -c1-7)"
           helm upgrade --install habr deploy/helm/habr \
             -f deploy/helm/habr/values-production.yaml \
             --set gateway.image.tag=${IMAGE_TAG} \
