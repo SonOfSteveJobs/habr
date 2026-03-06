@@ -5,8 +5,11 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
+RUN go install github.com/bufbuild/buf/cmd/buf@v1.65.0
+
 COPY . .
 
+RUN cd proto && buf generate
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server ./services/article/cmd
 
 FROM alpine:3.23.3
