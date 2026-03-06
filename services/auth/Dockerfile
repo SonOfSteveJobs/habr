@@ -5,7 +5,8 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-RUN go install github.com/bufbuild/buf/cmd/buf@v1.65.0
+RUN go install github.com/bufbuild/buf/cmd/buf@v1.65.0 && \
+    go install github.com/pressly/goose/v3/cmd/goose@v3.24.3
 
 COPY . .
 
@@ -19,6 +20,7 @@ WORKDIR /app
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=builder /app/server .
+COPY --from=builder /go/bin/goose /usr/local/bin/goose
 COPY --from=builder /app/migrations/auth ./migrations
 
 RUN chown -R appuser:appgroup /app
