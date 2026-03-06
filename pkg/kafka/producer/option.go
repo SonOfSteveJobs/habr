@@ -17,15 +17,15 @@ func WithIdempotent() Option {
 }
 
 //// WithFlush - нужен ли батч на отправку (например каждые 100 сообщений или каждые 0.5 сек)
-//func WithFlush(messages int, frequency time.Duration) Option {
+// func WithFlush(messages int, frequency time.Duration) Option {
 //	return func(c *sarama.Config) {
 //		c.Producer.Flush.Messages = messages
 //		c.Producer.Flush.Frequency = frequency
 //	}
 //}
-//
+
 //// WithRetry - нужно ли ретраить сообщения которые упали с ошибкой
-//func WithRetry(max int) Option {
+// func WithRetry(max int) Option {
 //	return func(c *sarama.Config) {
 //		c.Producer.Retry.Max = max
 //	}
