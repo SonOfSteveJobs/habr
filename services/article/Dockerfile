@@ -5,8 +5,8 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-RUN go install github.com/bufbuild/buf/cmd/buf@v1.65.0 && \
-    go install github.com/pressly/goose/v3/cmd/goose@v3.24.3
+RUN go install github.com/bufbuild/buf/cmd/buf@v1.65.0
+RUN CGO_ENABLED=0 go install github.com/pressly/goose/v3/cmd/goose@v3.24.3
 
 COPY . .
 
