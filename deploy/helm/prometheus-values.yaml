@@ -19,5 +19,8 @@ grafana:
   persistence:
     enabled: true
     size: 1Gi
+  service:
+    type: NodePort
+    nodePort: 30030
 alertmanager:
   enabled: false

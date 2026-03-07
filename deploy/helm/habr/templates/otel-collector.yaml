@@ -128,4 +128,5 @@ spec:
   endpoints:
     - port: metrics
       interval: 15s
+      honorLabels: true
 {{- end }}
