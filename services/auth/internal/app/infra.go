@@ -54,6 +54,7 @@ func (c *infraContainer) initPgPool(ctx context.Context) error {
 		return err
 	}
 
+	pgCfg.MaxConns = 20
 	pgCfg.ConnConfig.Tracer = otelpgx.NewTracer()
 
 	pool, err := pgxpool.NewWithConfig(ctx, pgCfg)
