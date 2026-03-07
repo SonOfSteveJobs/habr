@@ -1,6 +1,6 @@
 {
   "baseUrl": "http://144.31.99.124:30080",
-  "rps":00,
+  "rps":100,
   "duration": "2m",
   "readRatio": 90,
   "setupUsers": 50,
