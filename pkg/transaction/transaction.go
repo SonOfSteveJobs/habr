@@ -58,9 +58,12 @@ func (m *Manager) Wrap(ctx context.Context, fn func(ctx context.Context) error) 
 
 // ExtractExecutor -позволяет repository  работать и с транзакцией и без
 func (m *Manager) ExtractExecutor(ctx context.Context) Executor {
+	var exec Executor
 	if tx, ok := ctx.Value(ctxKey{}).(pgx.Tx); ok {
-		return tx
+		exec = tx
+	} else {
+		exec = m.pool
 	}
 
-	return m.pool
+	return newInstrumented(exec)
 }

@@ -1,0 +1,14 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/sonofstevejobs/habr-notification
+  tag: latest
+  pullPolicy: IfNotPresent
+
+migration:
+  enabled: true
+
+resources: {}
+
+env: {}
+envFromSecret: {}

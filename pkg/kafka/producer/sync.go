@@ -8,6 +8,7 @@ import (
 
 	"github.com/SonOfSteveJobs/habr/pkg/kafka"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
+	"github.com/SonOfSteveJobs/habr/pkg/metrics"
 )
 
 type SyncProducer struct {
@@ -33,6 +34,8 @@ func (p *SyncProducer) Send(ctx context.Context, msg kafka.Message) error {
 
 		return fmt.Errorf("kafka sync send: %w", err)
 	}
+
+	metrics.RecordProducerMessage(ctx, p.topic)
 
 	return nil
 }

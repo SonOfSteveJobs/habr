@@ -17,6 +17,7 @@ type Config struct {
 	redisAddr        string
 	logger           LoggerConfig
 	cacheArticlesTTL time.Duration
+	tracing          *TracingConfig
 }
 
 func (c *Config) GRPCPort() string                { return c.grpcPort }
@@ -24,6 +25,7 @@ func (c *Config) DBURI() string                   { return c.dbURI }
 func (c *Config) RedisAddr() string               { return c.redisAddr }
 func (c *Config) Logger() LoggerConfig            { return c.logger }
 func (c *Config) CacheArticlesTTL() time.Duration { return c.cacheArticlesTTL }
+func (c *Config) Tracing() *TracingConfig         { return c.tracing }
 
 func Load(path ...string) error {
 	err := godotenv.Load(path...)
@@ -60,12 +62,18 @@ func Load(path ...string) error {
 		cacheArticlesTTL = parsed
 	}
 
+	tracing, err := newTracingConfig()
+	if err != nil {
+		return err
+	}
+
 	appConfig = &Config{
 		grpcPort:         grpcPort,
 		dbURI:            dbURI,
 		redisAddr:        redisAddr,
 		logger:           logger,
 		cacheArticlesTTL: cacheArticlesTTL,
+		tracing:          tracing,
 	}
 
 	return nil

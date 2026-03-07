@@ -9,6 +9,8 @@ import (
 
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
 	"github.com/SonOfSteveJobs/habr/pkg/grpclog"
+	"github.com/SonOfSteveJobs/habr/pkg/metrics"
+	"github.com/SonOfSteveJobs/habr/pkg/tracing"
 	"github.com/SonOfSteveJobs/habr/services/gateway/internal/config"
 )
 
@@ -38,7 +40,11 @@ func (c *infraContainer) initAuthConn() error {
 	conn, err := grpc.NewClient(
 		config.AppConfig().AuthGRPCAddr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(grpclog.UnaryClientInterceptor()),
+		grpc.WithChainUnaryInterceptor(
+			tracing.UnaryClientInterceptor(),
+			metrics.UnaryClientInterceptor(),
+			grpclog.UnaryClientInterceptor(),
+		),
 	)
 	if err != nil {
 		return err
@@ -55,7 +61,11 @@ func (c *infraContainer) initArticleConn() error {
 	conn, err := grpc.NewClient(
 		config.AppConfig().ArticleGRPCAddr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(grpclog.UnaryClientInterceptor()),
+		grpc.WithChainUnaryInterceptor(
+			tracing.UnaryClientInterceptor(),
+			metrics.UnaryClientInterceptor(),
+			grpclog.UnaryClientInterceptor(),
+		),
 	)
 	if err != nil {
 		return err

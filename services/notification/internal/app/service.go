@@ -2,6 +2,8 @@ package app
 
 import (
 	"github.com/SonOfSteveJobs/habr/pkg/kafka/consumer"
+	"github.com/SonOfSteveJobs/habr/pkg/metrics"
+	"github.com/SonOfSteveJobs/habr/pkg/tracing"
 	"github.com/SonOfSteveJobs/habr/services/notification/internal/config"
 	"github.com/SonOfSteveJobs/habr/services/notification/internal/email_sender"
 	eventRepo "github.com/SonOfSteveJobs/habr/services/notification/internal/repository/event"
@@ -27,6 +29,8 @@ func (c *serviceContainer) KafkaConsumer() *consumer.Consumer {
 			c.infra.ConsumerGroup(),
 			[]string{cfg.Topic()},
 			consumer.Recovery,
+			tracing.ConsumerMiddleware(),
+			metrics.ConsumerMiddleware(),
 			consumer.Logging,
 			consumer.WithRetry(3),
 		)

@@ -14,6 +14,7 @@ type Config struct {
 	articleGRPCAddr string
 	jwtSecret       string
 	logger          LoggerConfig
+	tracing         *TracingConfig
 }
 
 func (c *Config) HTTPPort() string        { return c.httpPort }
@@ -21,6 +22,7 @@ func (c *Config) AuthGRPCAddr() string    { return c.authGRPCAddr }
 func (c *Config) ArticleGRPCAddr() string { return c.articleGRPCAddr }
 func (c *Config) JWTSecret() string       { return c.jwtSecret }
 func (c *Config) Logger() LoggerConfig    { return c.logger }
+func (c *Config) Tracing() *TracingConfig { return c.tracing }
 
 func Load(path ...string) error {
 	err := godotenv.Load(path...)
@@ -53,12 +55,18 @@ func Load(path ...string) error {
 		return ErrJWTSecretNotProvided
 	}
 
+	tracing, err := newTracingConfig()
+	if err != nil {
+		return err
+	}
+
 	appConfig = &Config{
 		httpPort:        httpPort,
 		authGRPCAddr:    authGRPCAddr,
 		articleGRPCAddr: articleGRPCAddr,
 		jwtSecret:       jwtSecret,
 		logger:          logger,
+		tracing:         tracing,
 	}
 
 	return nil

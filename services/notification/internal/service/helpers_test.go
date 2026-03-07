@@ -36,8 +36,8 @@ func (m *mockEmailSender) Send(ctx context.Context, event model.UserRegisteredEv
 
 type mockTxManager struct{}
 
-func (m *mockTxManager) Wrap(_ context.Context, fn func(ctx context.Context) error) error {
-	return fn(context.Background())
+func (m *mockTxManager) Wrap(ctx context.Context, fn func(ctx context.Context) error) error {
+	return fn(ctx)
 }
 
 func newTestService(eventRepo *mockEventRepo, emailSender *mockEmailSender) *Service {

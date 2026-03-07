@@ -23,6 +23,7 @@ type Config struct {
 	eventTTL        time.Duration
 	cleanupInterval time.Duration
 	retentionPeriod time.Duration
+	tracing         *TracingConfig
 }
 
 func (c *Config) DBURI() string                  { return c.dbURI }
@@ -31,6 +32,7 @@ func (c *Config) Kafka() KafkaConfig             { return c.kafka }
 func (c *Config) EventTTL() time.Duration        { return c.eventTTL }
 func (c *Config) CleanupInterval() time.Duration { return c.cleanupInterval }
 func (c *Config) RetentionPeriod() time.Duration { return c.retentionPeriod }
+func (c *Config) Tracing() *TracingConfig        { return c.tracing }
 
 func Load(path ...string) error {
 	err := godotenv.Load(path...)
@@ -80,6 +82,11 @@ func Load(path ...string) error {
 		retentionPeriod = parsed
 	}
 
+	tracing, err := newTracingConfig()
+	if err != nil {
+		return err
+	}
+
 	appConfig = &Config{
 		dbURI:           dbURI,
 		logger:          logger,
@@ -87,6 +94,7 @@ func Load(path ...string) error {
 		eventTTL:        eventTTL,
 		cleanupInterval: cleanupInterval,
 		retentionPeriod: retentionPeriod,
+		tracing:         tracing,
 	}
 
 	return nil

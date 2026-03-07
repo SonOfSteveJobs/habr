@@ -11,6 +11,8 @@ import (
 	authv1 "github.com/SonOfSteveJobs/habr/pkg/gen/auth/v1"
 	"github.com/SonOfSteveJobs/habr/pkg/grpcvalidate"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
+	"github.com/SonOfSteveJobs/habr/pkg/metrics"
+	"github.com/SonOfSteveJobs/habr/pkg/tracing"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/config"
 )
 
@@ -63,6 +65,9 @@ func (a *App) initDeps(ctx context.Context) error {
 	log := logger.Logger()
 
 	steps := []initStep{
+		{"tracing", a.initTracing},
+		{"otel-logger", a.initOTelLogger},
+		{"metrics", a.initMetrics},
 		{"infra: postgres, redis, kafka", a.initInfra},
 		{"service: repositories, services", a.initService},
 		{"gRPC server", a.initGRPCServer},
@@ -91,13 +96,47 @@ func (a *App) initInfra(ctx context.Context) error {
 
 func (a *App) initService(_ context.Context) error {
 	a.service = newServiceContainer(a.infra)
-	_ = a.service.KafkaProducer()
+	_ = a.service.KafkaProducer() //nolint:contextcheck // нет родительского контекста, тут все вроде бы норм
+	return nil
+}
+
+func (a *App) initTracing(ctx context.Context) error {
+	if err := tracing.InitTracer(ctx, config.AppConfig().Tracing()); err != nil {
+		return err
+	}
+
+	closer.AddNamed("tracing", tracing.ShutdownTracer)
+
+	return nil
+}
+
+func (a *App) initOTelLogger(ctx context.Context) error {
+	if err := logger.EnableOTel(ctx, config.AppConfig().Tracing()); err != nil {
+		return err
+	}
+
+	closer.AddNamed("otel-logger", logger.ShutdownOTelLogger)
+
+	return nil
+}
+
+func (a *App) initMetrics(ctx context.Context) error {
+	if err := metrics.InitMeter(ctx, config.AppConfig().Tracing()); err != nil {
+		return err
+	}
+
+	closer.AddNamed("metrics", metrics.ShutdownMeter)
+
 	return nil
 }
 
 func (a *App) initGRPCServer(_ context.Context) error {
 	a.grpcServer = grpc.NewServer(
-		grpc.UnaryInterceptor(grpcvalidate.UnaryInterceptor()),
+		grpc.ChainUnaryInterceptor(
+			tracing.UnaryServerInterceptor(),
+			metrics.UnaryServerInterceptor(),
+			grpcvalidate.UnaryInterceptor(),
+		),
 	)
 	authv1.RegisterAuthServiceServer(a.grpcServer, a.service.Handler())
 	reflection.Register(a.grpcServer)

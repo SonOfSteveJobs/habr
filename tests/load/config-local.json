@@ -1,0 +1,14 @@
+{
+  "baseUrl": "http://144.31.99.124:30080",
+  "rps":25,
+  "duration": "2m",
+  "readRatio": 80,
+  "setupUsers": 50,
+  "maxVUs": 1000,
+  "thresholds": {
+    "httpReqDurationP95": 500,
+    "httpReqDurationP99": 1000,
+    "httpReqFailedRate": 0.05,
+    "endpointP95": 500
+  }
+}
