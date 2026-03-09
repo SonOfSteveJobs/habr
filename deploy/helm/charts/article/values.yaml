@@ -1,0 +1,18 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/sonofstevejobs/habr-article
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 50052
+
+migration:
+  enabled: true
+
+resources: {}
+
+env: {}
+envFromSecret: {}

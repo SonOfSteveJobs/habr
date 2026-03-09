@@ -18,10 +18,9 @@ import (
 
 type contextKey string
 
-const (
-	userIDKey   contextKey = "user_id"
-	jwtPartsLen            = 3
-)
+const userIDKey contextKey = "user_id"
+
+const jwtPartsLen = 3
 
 type jwtPayload struct {
 	UserID string `json:"sub"`
@@ -85,7 +84,7 @@ func writeAuthError(w http.ResponseWriter, r *http.Request, msg string) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusUnauthorized)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg}) //nolint:gosec
 }
 
 func validateJWT(token string, secret []byte) (*jwtPayload, error) {

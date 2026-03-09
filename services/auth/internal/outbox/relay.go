@@ -8,6 +8,7 @@ import (
 
 	"github.com/SonOfSteveJobs/habr/pkg/kafka"
 	"github.com/SonOfSteveJobs/habr/pkg/logger"
+	"github.com/SonOfSteveJobs/habr/pkg/tracing"
 	"github.com/SonOfSteveJobs/habr/services/auth/internal/model"
 )
 
@@ -75,20 +76,29 @@ func (r *Relay) poll(ctx context.Context) {
 	}
 
 	for _, event := range events {
+		eventCtx, span := tracing.StartSpan(ctx, "kafka.produce/outbox")
+
 		msg := kafka.Message{
 			Key:      event.Key,
 			Value:    event.Value,
 			Metadata: event.EventID.String(),
 		}
 
+		tracing.InjectToMessage(eventCtx, &msg)
+
 		log.Info().Str("event_id", event.EventID.String()).Msg("outbox: send to kafka")
 
 		if err := r.producer.Send(ctx, msg); err != nil {
+			span.RecordError(err)
+			span.End()
+
 			log.Error().Err(err).
 				Str("event_id", event.EventID.String()).
 				Msg("outbox: send to kafka failed")
 			return
 		}
+
+		span.End()
 	}
 }
 

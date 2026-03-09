@@ -28,3 +28,7 @@ Thumbs.db
 gen/
 /cmd
 coverage.*
+
+# Helm dependency archives
+deploy/helm/habr/charts/*.tgz
+deploy/helm/habr/Chart.lock

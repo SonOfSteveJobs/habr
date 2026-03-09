@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/IBM/sarama"
+	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/SonOfSteveJobs/habr/pkg/closer"
@@ -36,7 +37,14 @@ func (c *infraContainer) TxManager() *transaction.Manager     { return c.txManag
 func (c *infraContainer) ConsumerGroup() sarama.ConsumerGroup { return c.consumerGroup }
 
 func (c *infraContainer) initPgPool(ctx context.Context) error {
-	pool, err := pgxpool.New(ctx, config.AppConfig().DBURI())
+	pgCfg, err := pgxpool.ParseConfig(config.AppConfig().DBURI())
+	if err != nil {
+		return err
+	}
+
+	pgCfg.ConnConfig.Tracer = otelpgx.NewTracer()
+
+	pool, err := pgxpool.NewWithConfig(ctx, pgCfg)
 	if err != nil {
 		return err
 	}

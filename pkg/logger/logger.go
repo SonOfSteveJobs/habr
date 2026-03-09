@@ -47,8 +47,18 @@ func Logger() zerolog.Logger {
 
 func Ctx(ctx context.Context) zerolog.Logger {
 	if l, ok := ctx.Value(loggerCtxKey{}).(zerolog.Logger); ok {
-		return l
+		return l.With().Ctx(ctx).Logger()
 	}
 
-	return log
+	return log.With().Ctx(ctx).Logger()
+}
+
+func EnableOTel(ctx context.Context, cfg OTelConfig) error {
+	if err := InitOTelLogger(ctx, cfg); err != nil {
+		return err
+	}
+
+	log = log.Hook(otelHook{})
+
+	return nil
 }

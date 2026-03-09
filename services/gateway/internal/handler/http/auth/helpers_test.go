@@ -43,12 +43,12 @@ func newTestHandler(client *mockAuthClient) *Handler {
 	return New(client)
 }
 
-func makeRequest(method, path, body string) (*httptest.ResponseRecorder, *http.Request) {
+func makeRequest(path, body string) (*httptest.ResponseRecorder, *http.Request) {
 	var r *http.Request
 	if body != "" {
-		r = httptest.NewRequest(method, path, bytes.NewBufferString(body))
+		r = httptest.NewRequest(http.MethodPost, path, bytes.NewBufferString(body))
 	} else {
-		r = httptest.NewRequest(method, path, nil)
+		r = httptest.NewRequest(http.MethodPost, path, nil)
 	}
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()

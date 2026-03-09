@@ -1,0 +1,35 @@
+name: CD
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [closed]
+
+jobs:
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Deploy with Helm
+        run: |
+          IMAGE_TAG="sha-$(echo ${{ github.sha }} | cut -c1-7)"
+          helm upgrade --install habr deploy/helm/habr \
+            -f deploy/helm/habr/values-production.yaml \
+            --set gateway.image.tag=${IMAGE_TAG} \
+            --set auth.image.tag=${IMAGE_TAG} \
+            --set article.image.tag=${IMAGE_TAG} \
+            --set notification.image.tag=${IMAGE_TAG} \
+            --timeout 5m \
+            --wait

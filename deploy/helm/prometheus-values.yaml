@@ -1,0 +1,26 @@
+prometheus:
+  prometheusSpec:
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+    retention: 7d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+grafana:
+  adminPassword: admin
+  persistence:
+    enabled: true
+    size: 1Gi
+  service:
+    type: NodePort
+    nodePort: 30030
+alertmanager:
+  enabled: false
